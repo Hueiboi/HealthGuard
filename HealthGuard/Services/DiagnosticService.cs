@@ -1,11 +1,13 @@
-﻿using System;
+﻿using HealthGuard.Models.Dto;
+using HealthGuard.Models.DTOs;
+using HealthGuard.Models.Entities;
+using HealthGuard.Models.Entity;
+using HealthGuard.Repositories;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using HealthGuard.Models.Entities;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
 
 namespace HealthGuard.Services
 {

@@ -1,10 +1,11 @@
-﻿using System;
+﻿using HealthGuard.Mappers;
+using HealthGuard.Models.Dto;
+using HealthGuard.Models.DTOs;
+using HealthGuard.Models.Entities;
+using HealthGuard.Repositories;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using HealthGuard.Models.Entities;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
-using HealthGuard.Mappers;
 
 namespace HealthGuard.Services
 {
