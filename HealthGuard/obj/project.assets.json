@@ -6122,23 +6122,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\LENOVO\\.nuget\\packages\\": {},
+    "C:\\Users\\Admin\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\HOC HANH\\2026-2027\\Web\\HealthGuard\\HealthGuard\\HealthGuard.csproj",
+      "projectUniqueName": "E:\\CODE tren lop\\WEBNC\\HealthGuard\\HealthGuard.csproj",
       "projectName": "HealthGuard",
-      "projectPath": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\HOC HANH\\2026-2027\\Web\\HealthGuard\\HealthGuard\\HealthGuard.csproj",
-      "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\LENOVO\\OneDrive\\Desktop\\HOC HANH\\2026-2027\\Web\\HealthGuard\\HealthGuard\\obj\\",
+      "projectPath": "E:\\CODE tren lop\\WEBNC\\HealthGuard\\HealthGuard.csproj",
+      "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
+      "outputPath": "E:\\CODE tren lop\\WEBNC\\HealthGuard\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\LENOVO\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
