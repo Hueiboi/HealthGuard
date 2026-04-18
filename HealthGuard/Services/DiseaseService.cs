@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using HealthGuard.Models.Entities;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
-using HealthGuard.Mappers;
+using HealthGuard.Models.Entity;
+using HealthGuard.Models.Dto;
 
 namespace HealthGuard.Services
 {
@@ -19,58 +17,46 @@ namespace HealthGuard.Services
             _diseaseMapper = diseaseMapper;
         }
 
-        public async Task<DiseaseDTO> CreateDiseaseAsync(DiseaseDTO request)
+        public async Task<DiseaseDTO> CreateDiseaseAsync(DiseaseDTO request) // Dùng DiseaseDTO viết hoa theo ý bạn
         {
             var disease = _diseaseMapper.ToEntity(request);
             var savedDisease = await _diseaseRepository.SaveAsync(disease);
-            return _diseaseMapper.ToDTO(savedDisease);
+            return _diseaseMapper.ToDto(savedDisease);
         }
 
         public async Task<IEnumerable<DiseaseDTO>> GetAllDiseasesAsync(int page, int size, string keyword)
         {
-            // Trong EF Core, tìm kiếm không phân biệt hoa thường có thể dùng string.Contains hoặc EF.Functions.Like
             var diseases = await _diseaseRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
 
             var dtos = new List<DiseaseDTO>();
             foreach (var disease in diseases)
             {
-                dtos.Add(_diseaseMapper.ToDTO(disease));
+                dtos.Add(_diseaseMapper.ToDto(disease));
             }
             return dtos;
         }
 
-        public async Task<DiseaseDTO> GetDiseaseByIdAsync(long id)
+        public async Task<DiseaseDTO> GetDiseaseByIdAsync(int id) // Đổi long -> int
         {
             var disease = await _diseaseRepository.FindByIdAsync(id);
-            if (disease == null)
-            {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
-            }
-            return _diseaseMapper.ToDTO(disease);
+            if (disease == null) throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
+            return _diseaseMapper.ToDto(disease);
         }
 
-        public async Task<DiseaseDTO> UpdateDiseaseAsync(long id, DiseaseDTO request)
+        public async Task<DiseaseDTO> UpdateDiseaseAsync(int id, DiseaseDTO request) // Đổi long -> int
         {
             var existingDisease = await _diseaseRepository.FindByIdAsync(id);
-            if (existingDisease == null)
-            {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
-            }
+            if (existingDisease == null) throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
 
-            // Map dữ liệu mới vào entity cũ
-            _diseaseMapper.UpdateEntityFromDTO(request, existingDisease);
-
+            _diseaseMapper.UpdateEntityFromDto(request, existingDisease);
             var updatedDisease = await _diseaseRepository.SaveAsync(existingDisease);
-            return _diseaseMapper.ToDTO(updatedDisease);
+            return _diseaseMapper.ToDto(updatedDisease);
         }
 
-        public async Task DeleteDiseaseAsync(long id)
+        public async Task DeleteDiseaseAsync(int id) // Đổi long -> int
         {
             var disease = await _diseaseRepository.FindByIdAsync(id);
-            if (disease == null)
-            {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
-            }
+            if (disease == null) throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
             await _diseaseRepository.DeleteAsync(disease);
         }
     }

@@ -1,8 +1,5 @@
-﻿using HealthGuard.Mappers;
-using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Models.Dto;
+using HealthGuard.Models.Entity;
 using System;
 using System.Threading.Tasks;
 
@@ -13,38 +10,27 @@ namespace HealthGuard.Services
         private readonly IPatientRepository _patientRepository;
         private readonly IPatientMapper _patientMapper;
 
-        public PatientProfileService(
-            IPatientRepository patientRepository,
-            IPatientMapper patientMapper)
+        public PatientProfileService(IPatientRepository patientRepository, IPatientMapper patientMapper)
         {
             _patientRepository = patientRepository;
             _patientMapper = patientMapper;
         }
 
-        public async Task<PatientProfileDTO> GetMyProfileAsync(string username)
+        public async Task<PatientProfileDto> GetMyProfileAsync(string username)
         {
             var myProfile = await _patientRepository.FindByUserUsernameAsync(username);
-            if (myProfile == null)
-            {
-                throw new Exception($"Không tìm thấy hồ sơ bệnh của người dùng: {username}");
-            }
-
-            return _patientMapper.ToDTO(myProfile);
+            if (myProfile == null) throw new Exception($"Không tìm thấy hồ sơ: {username}");
+            return _patientMapper.ToDto(myProfile);
         }
 
-        public async Task<PatientProfileDTO> UpdateProfileAsync(PatientProfileDTO request, string username)
+        public async Task<PatientProfileDto> UpdateProfileAsync(PatientProfileDto request, string username)
         {
             var existingPatient = await _patientRepository.FindByUserUsernameAsync(username);
-            if (existingPatient == null)
-            {
-                throw new Exception($"Không tìm thấy hồ sơ bệnh của người dùng: {username}");
-            }
+            if (existingPatient == null) throw new Exception($"Không tìm thấy hồ sơ: {username}");
 
-            // Mapper sẽ copy dữ liệu từ request sang existingPatient
-            _patientMapper.UpdateEntityFromDTO(request, existingPatient);
-
+            _patientMapper.UpdateEntityFromDto(request, existingPatient);
             var updatedPatient = await _patientRepository.SaveAsync(existingPatient);
-            return _patientMapper.ToDTO(updatedPatient);
+            return _patientMapper.ToDto(updatedPatient);
         }
     }
 }

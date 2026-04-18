@@ -1,0 +1,116 @@
+@page
+@model HealthGuard.Views.Pages.RegisterModel
+@{
+    Layout = null; // Trang này dùng giao diện riêng, không dùng Layout chung
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Đăng ký - Guardian Health</title>
+</head>
+<body class="bg-[#f8fafc] min-h-screen flex flex-col justify-between font-sans">
+
+    <div class="flex-grow flex items-center justify-center p-6">
+        <div class="max-w-[1000px] w-full bg-white rounded-[2.5rem] shadow-xl overflow-hidden flex flex-col md:flex-row border border-gray-100">
+            
+            <div class="md:w-[45%] bg-[#f0f7ff] p-12 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-[#0052cc] font-bold text-xl mb-12">Guardian Health</h2>
+                    <h1 class="text-[2.75rem] font-bold text-[#0f172a] leading-[1.1] mb-6">
+                        Empowering your <br />
+                        <span class="text-[#0052cc]">health journey.</span>
+                    </h1>
+                    <p class="text-slate-500 text-base leading-relaxed">
+                        Join our digital sanctuary where medical precision meets empathetic care. Manage your diagnostics and profile with ease.
+                    </p>
+                </div>
+
+                <div class="bg-white p-4 rounded-3xl shadow-sm flex items-center space-x-4 w-fit border border-blue-50 mt-12">
+                    <div class="bg-blue-100 p-3 rounded-2xl text-[#0052cc]">
+                        <i class="fas fa-shield-halved text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-[#0f172a]">Secure & Confidential</p>
+                        <p class="text-[11px] text-slate-400 uppercase">HIPAA Compliant Protection</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:w-[55%] p-12 lg:p-16">
+                <div class="mb-10">
+                    <h3 class="text-3xl font-bold text-[#0f172a] mb-2">Create Account</h3>
+                    <p class="text-slate-400">Enter your details to register as a new patient.</p>
+                </div>
+
+                <form method="post" class="space-y-6">
+                    <div asp-validation-summary="ModelOnly" class="text-red-500 text-sm"></div>
+
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Full Name</label>
+                        <div class="relative">
+                            <i class="far fa-user absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                            <input asp-for="Input.FullName" placeholder="Johnathan Doe"
+                                   class="w-full bg-[#f1f5f9] border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" />
+                            <span asp-validation-for="Input.FullName" class="text-red-500 text-[10px]"></span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Username or Email</label>
+                        <div class="relative">
+                            <i class="far fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                            <input asp-for="Input.UsernameOrEmail" placeholder="john.doe@example.com"
+                                   class="w-full bg-[#f1f5f9] border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" />
+                            <span asp-validation-for="Input.UsernameOrEmail" class="text-red-500 text-[10px]"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Password</label>
+                            <div class="relative">
+                                <i class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                                <input asp-for="Input.Password" type="password" placeholder="********"
+                                       class="w-full bg-[#f1f5f9] border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Confirm</label>
+                            <div class="relative">
+                                <i class="fas fa-rotate-left absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                                <input asp-for="Input.ConfirmPassword" type="password" placeholder="********"
+                                       class="w-full bg-[#f1f5f9] border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#0052cc] hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-100 transition-all flex items-center justify-center space-x-3 mt-4">
+                        <span>Register Account</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <p class="text-center text-sm text-slate-400 mt-8">
+                    Already have an account? <a href="/Login" class="text-[#0052cc] font-bold hover:underline">Sign In</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="p-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+        <div class="text-[#0052cc]">Guardian Health</div>
+        <div class="flex space-x-8 my-4 md:my-0">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Help Center</a>
+        </div>
+        <div>© 2024 Guardian Health. All Rights Reserved.</div>
+    </footer>
+
+</body>
+</html>

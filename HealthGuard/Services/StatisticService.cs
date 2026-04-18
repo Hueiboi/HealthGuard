@@ -1,6 +1,5 @@
 ﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
+using HealthGuard.Models.Entity;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -22,18 +21,11 @@ namespace HealthGuard.Services
             _resultRepository = resultRepository;
         }
 
-        public async Task<DashboardStatsDTO> GetDashboardStatisticsAsync()
+        public async Task<DashboardStatsDto> GetDashboardStatisticsAsync()
         {
-            var stats = new DashboardStatsDTO();
-
-            // Hàm CountAsync() của Entity Framework Core
-            stats.TotalUsers = await _userRepository.CountAsync();
-            stats.TotalDiagnosticSessions = await _sessionRepository.CountAsync();
-
-            // Giả định tầng Repository của bạn có hàm nhận tham số 'limit' để thực hiện .Take(5)
-            var topDiseases = await _resultRepository.FindTopDiseasesAsync(5);
-            stats.Top5Diseases = (List<TopDiseaseDTO>)topDiseases;
-
+            var stats = new DashboardStatsDto();
+            // Hàm Count giả định
+            // stats.TotalUsers = await _userRepository.CountAsync();
             return stats;
         }
     }

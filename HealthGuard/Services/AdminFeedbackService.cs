@@ -1,8 +1,5 @@
-﻿using HealthGuard.Mappers;
-using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Models.Dto;
+using HealthGuard.Models.Entity;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,21 +19,20 @@ namespace HealthGuard.Services
             _feedbackMapper = feedbackMapper;
         }
 
-        public async Task<IEnumerable<FeedbackResponseDTO>> GetAllFeedbacksAsync(int page, int size)
+        public async Task<IEnumerable<FeedbackResponseDto>> GetAllFeedbacksAsync(int page, int size)
         {
-            // Repository thực hiện logic: OrderByDescending(f => f.CreatedAt).Skip(...).Take(...)
             var feedbacks = await _feedbackRepository.FindAllByOrderByCreatedAtDescAsync(page, size);
 
-            var dtos = new List<FeedbackResponseDTO>();
+            var dtos = new List<FeedbackResponseDto>();
             foreach (var feedback in feedbacks)
             {
-                dtos.Add(_feedbackMapper.ToDTO(feedback));
+                dtos.Add(_feedbackMapper.ToDto(feedback));
             }
 
             return dtos;
         }
 
-        public async Task<FeedbackResponseDTO> GetFeedbackByIdAsync(long id)
+        public async Task<FeedbackResponseDto> GetFeedbackByIdAsync(int id) // Đổi long -> int
         {
             var feedback = await _feedbackRepository.FindByIdAsync(id);
             if (feedback == null)
@@ -44,7 +40,7 @@ namespace HealthGuard.Services
                 throw new Exception($"Không tìm thấy phản hồi với ID: {id}");
             }
 
-            return _feedbackMapper.ToDTO(feedback);
+            return _feedbackMapper.ToDto(feedback);
         }
     }
 }

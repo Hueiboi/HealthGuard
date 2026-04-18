@@ -1,10 +1,6 @@
-﻿using HealthGuard.Mappers;
-using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Models.Dto;
+using HealthGuard.Models.Entity;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
@@ -12,75 +8,57 @@ namespace HealthGuard.Services
     public class AdminUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IRoleRepository _roleRepository;
         private readonly IUserMapper _userMapper;
+        private readonly IRoleRepository _roleRepository;
 
-        public AdminUserService(
-            IUserRepository userRepository,
-            IRoleRepository roleRepository,
-            IUserMapper userMapper)
+        public AdminUserService(IUserRepository userRepository, IUserMapper userMapper, IRoleRepository roleRepository)
         {
             _userRepository = userRepository;
-            _roleRepository = roleRepository;
             _userMapper = userMapper;
+            _roleRepository = roleRepository;
         }
 
-        // Tùy thuộc vào cách bạn thiết kế Repository, hàm này có thể trả về một đối tượng PagedResult tùy chỉnh.
-        public async Task<IEnumerable<UserResponseDTO>> GetAllUsersAsync(int page, int size, string keyword)
-        {
-            // Logic phân trang (Skip/Take) và tìm kiếm thường được viết bên trong Repository
-            var users = await _userRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
-
-            var userDtos = new List<UserResponseDTO>();
-            foreach (var user in users)
-            {
-                userDtos.Add(_userMapper.ToDTO(user));
-            }
-            return userDtos;
-        }
-
-        public async Task<UserResponseDTO> GetUserByIdAsync(long id)
+        public async Task<UserResponseDto> GetUserByIdAsync(int id)
         {
             var user = await _userRepository.FindByIdAsync(id);
-            if (user == null)
-            {
-                throw new Exception($"Không tìm thấy người dùng có ID: {id}");
-            }
-            return _userMapper.ToDTO(user);
+            if (user == null) throw new Exception($"Không tìm thấy ID: {id}");
+            return _userMapper.ToDto(user);
         }
 
-        public async Task<UserResponseDTO> UpdateUserStatusAsync(long userId, bool isActive)
+        public async Task<UserResponseDto> UpdateUserStatusAsync(int userId, bool isActive)
         {
             var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null)
-            {
-                throw new Exception($"Không tìm thấy người dùng với ID: {userId}");
-            }
+            if (user == null) throw new Exception("Không tìm thấy người dùng");
 
             user.IsActive = isActive;
 
             var updatedUser = await _userRepository.SaveAsync(user);
-            return _userMapper.ToDTO(updatedUser);
+            return _userMapper.ToDto(updatedUser);
         }
 
-        public async Task<UserResponseDTO> ChangeUserRoleAsync(long userId, long roleId)
+        public async Task<System.Collections.Generic.IEnumerable<UserResponseDto>> GetAllUsersAsync(int page, int size, string keyword)
+        {
+            var users = await _userRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
+            var result = new System.Collections.Generic.List<UserResponseDto>();
+            foreach (var u in users)
+            {
+                result.Add(_userMapper.ToDto(u));
+            }
+            return result;
+        }
+
+        public async Task<UserResponseDto> ChangeUserRoleAsync(int userId, int roleId)
         {
             var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null)
-            {
-                throw new Exception($"Không tìm thấy người dùng với ID: {userId}");
-            }
-
             var newRole = await _roleRepository.FindByIdAsync(roleId);
-            if (newRole == null)
-            {
-                throw new Exception($"Không tìm thấy quyền với ID: {roleId}");
-            }
+
+            if (user == null || newRole == null) throw new Exception("Thông tin không hợp lệ");
 
             user.Role = newRole;
+            user.RoleId = roleId;
 
             var updatedUser = await _userRepository.SaveAsync(user);
-            return _userMapper.ToDTO(updatedUser);
+            return _userMapper.ToDto(updatedUser);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
+﻿using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +8,7 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/patient/diagnose")]
-    [Authorize] // Bắt buộc đăng nhập
+    [Authorize]
     public class DiagnosticController : ControllerBase
     {
         private readonly DiagnosticService _diagnosticService;
@@ -20,11 +19,9 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> RunDiagnosisAsync([FromBody] DiagnosticRequestDTO request)
+        public async Task<IActionResult> RunDiagnosisAsync([FromBody] DiagnosticRequestDto request) // Sửa DTO -> Dto
         {
-            // Lấy username từ JWT Token
             string username = User.Identity.Name;
-
             var result = await _diagnosticService.PerformDiagnosisAsync(username, request);
             return Ok(result);
         }

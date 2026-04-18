@@ -1,5 +1,4 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
+﻿using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +19,9 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateRoleAsync([FromBody] RoleDTO request)
+        public async Task<IActionResult> CreateRoleAsync([FromBody] RoleDto request) // Sửa DTO -> Dto
         {
             var createdRole = await _roleService.CreateRoleAsync(request);
-            // HttpStatus.CREATED (201)
             return StatusCode(201, createdRole);
         }
 
@@ -35,24 +33,24 @@ namespace HealthGuard.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetRoleByIdAsync([FromRoute] long id)
+        public async Task<IActionResult> GetRoleByIdAsync([FromRoute] int id) // Đổi long -> int
         {
             var role = await _roleService.GetRoleByIdAsync(id);
             return Ok(role);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRoleAsync([FromRoute] long id, [FromBody] RoleDTO request)
+        public async Task<IActionResult> UpdateRoleAsync([FromRoute] int id, [FromBody] RoleDto request) // Đổi long -> int
         {
             var updatedRole = await _roleService.UpdateRoleAsync(id, request);
             return Ok(updatedRole);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRoleAsync([FromRoute] long id)
+        public async Task<IActionResult> DeleteRoleAsync([FromRoute] int id) // Đổi long -> int
         {
             await _roleService.DeleteRoleAsync(id);
-            return NoContent(); // Tương đương ResponseEntity.noContent().build()
+            return NoContent();
         }
     }
 }

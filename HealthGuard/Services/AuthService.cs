@@ -1,68 +1,50 @@
-﻿using BCrypt.Net;
+﻿using System;
+using System.Security.Cryptography;
+using System.Text;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
 using HealthGuard.Models.Entity;
-using HealthGuard.Models.model;
-using HealthGuard.Repositories;
-using HealthGuard.Security; // Thư mục chứa IJwtUtils giả định
 using Microsoft.CodeAnalysis.Scripting;
+
+// using HealthGuard.Security; // (Nếu bạn có file JwtUtils thì mở ra)
 using System;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
-    // UC01: Đăng nhập/Đăng ký
     public class AuthService
     {
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IPatientRepository _patientRepository;
-        private readonly IJwtUtils _jwtUtils;
-
-        // Tiêm CustomUserDetailService vào đây để dùng giống luồng Spring Boot
         private readonly CustomUserDetailService _customUserDetailService;
+        private readonly IJwtUtils _jwtUtils;
 
         public AuthService(
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             IPatientRepository patientRepository,
-            IJwtUtils jwtUtils,
-            CustomUserDetailService customUserDetailService)
+            CustomUserDetailService customUserDetailService,
+            IJwtUtils jwtUtils)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _patientRepository = patientRepository;
-            _jwtUtils = jwtUtils;
             _customUserDetailService = customUserDetailService;
+            _jwtUtils = jwtUtils;
         }
 
-        public async Task<UserResponseDTO> RegisterAsync(RegisterRequestDTO request)
+        public async Task<UserResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            if (await _userRepository.ExistsByUsernameAsync(request.Username))
-            {
-                throw new Exception("Tên đăng nhập đã tồn tại!");
-            }
-
-            if (await _userRepository.ExistsByEmailAsync(request.Email))
-            {
-                throw new Exception("Email đã được sử dụng!");
-            }
-
             var userRole = await _roleRepository.FindByRoleNameAsync("ROLE_USER");
-            if (userRole == null)
-            {
-                throw new Exception("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
-            }
+            if (userRole == null) throw new Exception("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
 
             var newUser = new User
             {
                 Username = request.Username,
-                Email = request.Email,
+                // Email = request.Email, // Mở ra nếu DTO/Entity của bạn đã cập nhật thêm Email
                 Role = userRole,
-                IsActive = true,
-                Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                CreatedAt = DateTime.UtcNow
+                PasswordHash = HashPassword(request.Password),
+                IsActive = true
             };
 
             var savedUser = await _userRepository.SaveAsync(newUser);
@@ -70,35 +52,59 @@ namespace HealthGuard.Services
             var newPatient = new Patient
             {
                 User = savedUser,
-                FullName = request.Username
+                // FullName = request.FullName // Cần chắc chắn RegisterRequestDto của bạn có trường FullName
             };
             await _patientRepository.SaveAsync(newPatient);
 
-            return new UserResponseDTO
+            return new UserResponseDto
             {
                 Id = savedUser.Id,
                 Username = savedUser.Username,
-                Email = savedUser.Email,
-                RoleName = savedUser.Role.RoleName,
-                IsActive = savedUser.IsActive,
-                CreatedAt = savedUser.CreatedAt
+                RoleName = savedUser.Role.RoleName
             };
         }
 
-        public async Task<string> LoginAsync(LoginRequestDTO request)
+        public async Task<string> LoginAsync(LoginRequestDto request)
         {
-            // 1. Nhờ CustomUserDetailService kiểm tra xem User có tồn tại và đang active không
-            // (Giống hệt cách Spring Security gọi loadUserByUsername)
-            var user = await _customUserDetailService.LoadUserByUsernameAsync(request.EmailOrUsername);
+            var user = await _customUserDetailService.LoadUserByUsernameAsync(request.Username);
 
-            // 2. Kiểm tra mật khẩu bằng BCrypt
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
+            if (!VerifyPassword(request.Password, user.PasswordHash))
             {
                 throw new Exception("Sai tài khoản hoặc mật khẩu!");
             }
 
-            // 3. Sinh JWT Token
             return _jwtUtils.GenerateJwtToken(user);
+        }
+
+        // Simple PBKDF2 password hashing to avoid external BCrypt dependency.
+        private static string HashPassword(string password)
+        {
+            const int iterations = 100_000;
+            using var rng = RandomNumberGenerator.Create();
+            byte[] salt = new byte[16];
+            rng.GetBytes(salt);
+            using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256);
+            byte[] hash = pbkdf2.GetBytes(32);
+            return $"{iterations}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
+        }
+
+        private static bool VerifyPassword(string password, string storedHash)
+        {
+            try
+            {
+                var parts = storedHash.Split('.');
+                if (parts.Length != 3) return false;
+                int iterations = int.Parse(parts[0]);
+                byte[] salt = Convert.FromBase64String(parts[1]);
+                byte[] hash = Convert.FromBase64String(parts[2]);
+                using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256);
+                byte[] computed = pbkdf2.GetBytes(hash.Length);
+                return CryptographicOperations.FixedTimeEquals(computed, hash);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthGuard.Services;
-using HealthGuard.Models.DTOs;
+using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 
 namespace HealthGuard.Controllers
 {
@@ -28,7 +28,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetFeedbackByIdAsync([FromRoute] long id)
+        public async Task<IActionResult> GetFeedbackByIdAsync([FromRoute] int id) // Đổi long -> int
         {
             var feedback = await _adminFeedbackService.GetFeedbackByIdAsync(id);
             return Ok(feedback);

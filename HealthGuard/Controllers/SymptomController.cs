@@ -1,5 +1,4 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
+﻿using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,10 +19,9 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateSymptomAsync([FromBody] SymptomDTO request)
+        public async Task<IActionResult> CreateSymptomAsync([FromBody] SymptomDto request) // Sửa DTO -> Dto
         {
             var createdSymptom = await _symptomService.CreateSymptomAsync(request);
-            // Bạn có thể trả về object vừa tạo kèm mã 201
             return StatusCode(201, createdSymptom);
         }
 
@@ -38,36 +36,35 @@ namespace HealthGuard.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetSymptomByIdAsync([FromRoute] long id)
+        public async Task<IActionResult> GetSymptomByIdAsync([FromRoute] int id) // Đổi long -> int
         {
             var symptom = await _symptomService.GetSymptomByIdAsync(id);
             return Ok(symptom);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSymptomAsync([FromRoute] long id, [FromBody] SymptomDTO request)
+        public async Task<IActionResult> UpdateSymptomAsync([FromRoute] int id, [FromBody] SymptomDto request) // Đổi long -> int
         {
             var updatedSymptom = await _symptomService.UpdateSymptomAsync(id, request);
             return Ok(updatedSymptom);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSymptomAsync([FromRoute] long id)
+        public async Task<IActionResult> DeleteSymptomAsync([FromRoute] int id) // Đổi long -> int
         {
             await _symptomService.DeleteSymptomAsync(id);
             return NoContent();
         }
 
         [HttpPost("weights")]
-        public async Task<IActionResult> AssignWeightAsync([FromBody] WeightRuleDTO rule)
+        public async Task<IActionResult> AssignWeightAsync([FromBody] WeightRuleDto rule) // Sửa DTO -> Dto
         {
             await _symptomService.AssignWeightScoreAsync(rule);
-            // Trả về chuỗi thông báo thành công
             return Ok(new { message = "Đã thiết lập trọng số thành công!" });
         }
 
         [HttpGet("weights/disease/{diseaseId}")]
-        public async Task<IActionResult> GetWeightsByDiseaseAsync([FromRoute] long diseaseId)
+        public async Task<IActionResult> GetWeightsByDiseaseAsync([FromRoute] int diseaseId) // Đổi long -> int
         {
             var weights = await _symptomService.GetSymptomsByDiseaseAsync(diseaseId);
             return Ok(weights);

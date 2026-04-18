@@ -1,5 +1,4 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
+﻿using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -17,20 +16,17 @@ namespace HealthGuard.Controllers
             _authService = authService;
         }
 
-        // Endpoint: POST /api/auth/register
         [HttpPost("register")]
-        public async Task<IActionResult> RegisterUserAsync([FromBody] RegisterRequestDTO request)
+        public async Task<IActionResult> RegisterUserAsync([FromBody] RegisterRequestDto request) // Sửa DTO -> Dto
         {
             var registeredUser = await _authService.RegisterAsync(request);
-            return StatusCode(201, registeredUser); // HttpStatus.CREATED
+            return StatusCode(201, registeredUser);
         }
 
-        // Endpoint: POST /api/auth/login
         [HttpPost("login")]
-        public async Task<IActionResult> LoginUserAsync([FromBody] LoginRequestDTO request)
+        public async Task<IActionResult> LoginUserAsync([FromBody] LoginRequestDto request) // Sửa DTO -> Dto
         {
             var token = await _authService.LoginAsync(request);
-            // Trả về chuỗi Token dạng JSON thay vì chuỗi trần để Frontend dễ Parse
             return Ok(new { token = token });
         }
     }

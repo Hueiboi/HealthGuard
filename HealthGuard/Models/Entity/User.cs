@@ -19,6 +19,9 @@ namespace HealthGuard.Models.Entity
         [MaxLength(15)]
         public string PhoneNumber { get; set; }
 
+        // Trạng thái tài khoản
+        public bool IsActive { get; set; } = true;
+
         // Khóa ngoại nối sang Role
         [ForeignKey("Role")]
         public int RoleId { get; set; }

@@ -1,5 +1,4 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
+﻿using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +27,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateProfileAsync([FromBody] PatientProfileDTO request)
+        public async Task<IActionResult> UpdateProfileAsync([FromBody] PatientProfileDto request) // Sửa DTO -> Dto
         {
             string currentUsername = User.Identity.Name;
             var updatedProfile = await _patientProfileService.UpdateProfileAsync(request, currentUsername);

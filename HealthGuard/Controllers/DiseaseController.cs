@@ -2,13 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthGuard.Services;
-using HealthGuard.Models.DTOs;
+using HealthGuard.Models.Dto; // Đã sửa DTOs -> Dto
 
 namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/admin/disease")]
-    // [Authorize(Roles = "ROLE_ADMIN")] // Mở comment nếu bạn muốn chặn user thường
+    // [Authorize(Roles = "ROLE_ADMIN")] 
     public class DiseaseController : ControllerBase
     {
         private readonly DiseaseService _diseaseService;
@@ -19,10 +19,10 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateDiseaseAsync([FromBody] DiseaseDTO request)
+        public async Task<IActionResult> CreateDiseaseAsync([FromBody] DiseaseDTO request) // Bạn định nghĩa là DiseaseDTO (viết hoa)
         {
             var createdDisease = await _diseaseService.CreateDiseaseAsync(request);
-            return StatusCode(201, createdDisease); // Trả về HttpStatus.CREATED
+            return StatusCode(201, createdDisease);
         }
 
         [HttpGet]
@@ -36,21 +36,21 @@ namespace HealthGuard.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDiseaseByIdAsync([FromRoute] long id)
+        public async Task<IActionResult> GetDiseaseByIdAsync([FromRoute] int id) // Đổi long -> int
         {
             var disease = await _diseaseService.GetDiseaseByIdAsync(id);
             return Ok(disease);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDiseaseAsync([FromRoute] long id, [FromBody] DiseaseDTO request)
+        public async Task<IActionResult> UpdateDiseaseAsync([FromRoute] int id, [FromBody] DiseaseDTO request) // Đổi long -> int
         {
             var updatedDisease = await _diseaseService.UpdateDiseaseAsync(id, request);
             return Ok(updatedDisease);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDiseaseAsync([FromRoute] long id)
+        public async Task<IActionResult> DeleteDiseaseAsync([FromRoute] int id) // Đổi long -> int
         {
             await _diseaseService.DeleteDiseaseAsync(id);
             return NoContent();

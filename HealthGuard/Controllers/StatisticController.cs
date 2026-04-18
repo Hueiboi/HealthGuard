@@ -7,7 +7,7 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/admin/statistics")]
-    // [Authorize(Roles = "ROLE_ADMIN")] // Mở comment dòng này nếu bạn đã setup JWT Authentication
+    // [Authorize(Roles = "ROLE_ADMIN")] 
     public class StatisticController : ControllerBase
     {
         private readonly StatisticService _statisticService;
@@ -21,7 +21,7 @@ namespace HealthGuard.Controllers
         public async Task<IActionResult> GetDashboardStatsAsync()
         {
             var stats = await _statisticService.GetDashboardStatisticsAsync();
-            return Ok(stats); // Tương đương ResponseEntity.ok()
+            return Ok(stats);
         }
     }
 }
