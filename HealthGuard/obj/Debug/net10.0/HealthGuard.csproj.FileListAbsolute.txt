@@ -1,0 +1,9 @@
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.csproj.AssemblyReference.cache
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.AssemblyInfoInputs.cache
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.AssemblyInfo.cs
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.csproj.CoreCompileInputs.cache
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.RazorAssemblyInfo.cache
+C:\Users\LENOVO\OneDrive\Desktop\HOC HANH\2026-2027\Web\HealthGuard\HealthGuard\obj\Debug\net10.0\HealthGuard.RazorAssemblyInfo.cs
