@@ -1,0 +1,341 @@
+﻿@{
+    ViewData["Title"] = "Diagnostic Insights";
+}
+
+@section Styles {
+    <style>
+        .main-content {
+            max-width: 1100px;
+            margin: 40px auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .step-label {
+            color: #346cb0;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+
+        .page-desc {
+            color: #666;
+            font-size: 0.95rem;
+            max-width: 500px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-ghost {
+            color: #0d47a1;
+            background: none;
+            border: none;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+            .btn-ghost:hover {
+                background: #e2eafc;
+            }
+
+        .btn-primary-custom {
+            background: #0d47a1;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(13,71,161,0.2);
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 30px;
+        }
+
+        .glass-card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .primary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .disease-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .disease-icon {
+            width: 50px;
+            height: 50px;
+            background: #e2eafc;
+            color: #0d47a1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .disease-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            color: #111;
+        }
+
+        .disease-badge {
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .probability-box {
+            text-align: right;
+        }
+
+        .prob-score {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0d47a1;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .prob-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .clinical-desc {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .action-box {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .action-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #333;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .secondary-card {
+            padding: 20px 25px;
+            margin-bottom: 20px;
+        }
+
+        .sec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .sec-title {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .sec-prob {
+            font-weight: 800;
+            color: #346cb0;
+            font-size: 1.2rem;
+        }
+
+        .sec-desc {
+            color: #666;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .status-card {
+            background: #bcdcff;
+            padding: 25px;
+            border-radius: 20px;
+        }
+
+        .status-title {
+            font-weight: 800;
+            color: #082d68;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+
+        .status-desc {
+            color: #1a4d8c;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+    </style>
+}
+
+<main class="main-content">
+    <div class="page-header">
+        <div>
+            <div class="step-label">Step 3 of 3: Analysis Complete</div>
+            <h1 class="page-title">Diagnostic Insights</h1>
+            <p class="page-desc" id="statusMessage">
+                <i class="spinner-border spinner-border-sm text-primary"></i> Logistic Regression AI is processing your inputs...
+            </p>
+        </div>
+        <div class="top-actions">
+            <button class="btn-ghost"><i class="bi bi-clock-history"></i> View History</button>
+            <button class="btn-primary-custom"><i class="bi bi-download"></i> Save Result</button>
+        </div>
+    </div>
+
+    <div class="insights-grid" style="display: none;" id="resultContainer">
+
+        <div class="glass-card primary-card">
+            <div class="primary-header">
+                <div class="disease-info">
+                    <div class="disease-icon"><i class="bi bi-virus"></i></div>
+                    <div>
+                        <h2 class="disease-name" id="primaryDiseaseName">--</h2>
+                        <div class="disease-badge">Primary Indication</div>
+                    </div>
+                </div>
+                <div class="probability-box">
+                    <p class="prob-score" id="primaryProbability">--%</p>
+                    <p class="prob-label">Probability</p>
+                </div>
+            </div>
+            <p class="clinical-desc" id="primaryDesc">Based on the logistic regression analysis, here is the assessment.</p>
+
+            <div class="action-box">
+                <div class="action-title"><i class="bi bi-shield-check"></i> Recommended Action</div>
+                <p id="primaryTreatment" style="font-size: 0.95rem; color: #444;">Please consult a doctor.</p>
+            </div>
+        </div>
+
+        <div class="secondary-column" id="secondaryList">
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const symptomData = sessionStorage.getItem('healthGuard_SymptomDetails');
+            if (!symptomData) {
+                window.location.href = "/Diagnostic/Index";
+                return;
+            }
+
+            const parsedData = JSON.parse(symptomData);
+
+            // 1. CHUẨN BỊ PAYLOAD CHO API (Format thành kiểu Danh sách DTO C# cần)
+            const requestPayload = {
+                selectedSymptoms: parsedData.map(s => ({
+                    symptomId: parseInt(s.id),
+                    // Có thể thêm Intensity và Duration nếu DTO của ông có 2 field này
+                }))
+            };
+
+            try {
+                // 2. GỌI API LOGISTIC REGRESSION QUA C#
+                const response = await fetch('/api/patient/diagnose', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 'Authorization': 'Bearer ' + token // Nếu ông đang bật [Authorize]
+                    },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                if (!response.ok) throw new Error("Lỗi API C#");
+
+                const apiResult = await response.json();
+
+                // 3. ĐỔ DỮ LIỆU LÊN GIAO DIỆN
+                document.getElementById('statusMessage').innerHTML = "Our AI has securely processed your symptoms. Below is the preliminary assessment.";
+                document.getElementById('resultContainer').style.display = "grid";
+
+                // Giả sử apiResult.diagnoses là mảng chứa các kết quả đã xếp hạng
+                if(apiResult.diagnoses && apiResult.diagnoses.length > 0) {
+
+                    // Điền Top 1 vào Cột Trái
+                    const top1 = apiResult.diagnoses[0];
+                    document.getElementById('primaryDiseaseName').innerText = top1.diseaseName;
+                    document.getElementById('primaryProbability').innerText = top1.probability + "%";
+                    document.getElementById('primaryDesc').innerText = top1.description || "Dựa trên mô hình hồi quy logistic.";
+                    if(top1.treatment) document.getElementById('primaryTreatment').innerText = top1.treatment;
+
+                    // Điền Top 2, Top 3 vào Cột Phải
+                    const secList = document.getElementById('secondaryList');
+                    secList.innerHTML = ""; // Clear
+
+                    for(let i = 1; i < apiResult.diagnoses.length; i++) {
+                        const d = apiResult.diagnoses[i];
+                        secList.innerHTML += `
+                            <div class="glass-card secondary-card">
+                                <div class="sec-header">
+                                    <h3 class="sec-title"><i class="bi bi-info-circle"></i> ${d.diseaseName}</h3>
+                                    <span class="sec-prob">${d.probability}%</span>
+                                </div>
+                                <p class="sec-desc">${d.description || ""}</p>
+                            </div>
+                        `;
+                    }
+
+                    // Giữ lại thẻ báo Safe
+                    secList.innerHTML += `
+                        <div class="status-card mt-3">
+                            <div class="status-title"><i class="bi bi-shield-fill-exclamation"></i> Monitoring Advice</div>
+                            <p class="status-desc">Based on the data provided, continue to observe your symptoms over the next 48 hours.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Lỗi chẩn đoán:", error);
+                document.getElementById('statusMessage').innerHTML = "<span class='text-danger'>Lỗi kết nối tới Server AI. Vui lòng thử lại.</span>";
+            }
+        });
+    </script>
+}

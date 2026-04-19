@@ -1,6 +1,6 @@
-﻿using HealthGuard.Models.Entities;
+﻿using HealthGuard.Data; // Thay bằng namespace chứa HealthContext của ông
 using HealthGuard.Models.Entity;
-using HealthGuard.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
@@ -9,31 +9,31 @@ namespace HealthGuard.Services
     // Service phục vụ cho việc kiểm tra thông tin User trước khi cấp JWT
     public class CustomUserDetailService
     {
-        private readonly IUserRepository _userRepository;
+        private readonly HealthContext _context;
 
-        public CustomUserDetailService(IUserRepository userRepository)
+        // ĐÃ FIX: Tiêm trực tiếp HealthContext thay cho IUserRepository
+        public CustomUserDetailService(HealthContext context)
         {
-            _userRepository = userRepository;
+            _context = context;
         }
 
-        // Thay vì trả về UserDetails của Spring, ta trả về entity User
-        // Hàm này sẽ gánh vác nhiệm vụ tìm kiếm và kiểm tra trạng thái IsActive
         public async Task<User> LoadUserByUsernameAsync(string emailOrUsername)
         {
-            var user = await _userRepository.FindByEmailOrUsernameAsync(emailOrUsername, emailOrUsername);
+            // ĐÃ FIX: Dùng LINQ thay cho hàm của Repository
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == emailOrUsername || u.Email == emailOrUsername);
 
             if (user == null)
             {
-                // Tương đương UsernameNotFoundException
-                throw new Exception($"Không tìm thấy user: {emailOrUsername}");
+                // Dùng UnauthorizedAccessException chuẩn của .NET cho lỗi đăng nhập
+                throw new UnauthorizedAccessException($"Không tìm thấy user: {emailOrUsername}");
             }
 
             if (!user.IsActive)
             {
-                throw new Exception("Tài khoản đã bị khóa hoặc xóa!");
+                throw new UnauthorizedAccessException("Tài khoản đã bị khóa hoặc xóa!");
             }
 
-            // Trả về user hợp lệ để các service khác (như AuthService) dùng tiếp để tạo Token
             return user;
         }
     }

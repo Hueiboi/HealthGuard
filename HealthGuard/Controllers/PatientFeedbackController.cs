@@ -1,5 +1,4 @@
 ﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SubmitFeedbackAsync([FromBody] FeedbackRequestDTO request)
+        public async Task<IActionResult> SubmitFeedbackAsync([FromBody] FeedbackRequestDto request)
         {
             string username = User.Identity.Name;
             var result = await _feedbackService.SubmitFeedbackAsync(username, request);

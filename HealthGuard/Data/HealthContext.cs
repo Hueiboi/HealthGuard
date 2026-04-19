@@ -1,4 +1,4 @@
-﻿using HealthGuard.Models.Entity;
+﻿using HealthGuard.Models.Entity; // Đảm bảo đúng folder Entity số ít của ông
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthGuard.Data
@@ -30,14 +30,17 @@ namespace HealthGuard.Data
             modelBuilder.Entity<Disease>()
                 .HasIndex(d => d.DiseaseCode).IsUnique(); // Mã bệnh phải là duy nhất
 
-            // 2. KHÓA PHỨC HỢP (COMPOSITE KEYS) - BẮT BUỘC PHẢI CÓ
-            // Bảng liên kết Bệnh - Triệu chứng
+            // 2. KHÓA PHỨC HỢP (COMPOSITE KEYS) VÀ RÀNG BUỘC
+
+            // Bảng liên kết Bệnh - Triệu chứng (Vì bảng này thường không có cột Id riêng nên dùng HasKey là chuẩn)
             modelBuilder.Entity<DiseaseSymptom>()
                 .HasKey(ds => new { ds.DiseaseId, ds.SymptomId });
 
-            // Bảng liên kết Phiên khám - Triệu chứng
+            // ĐÃ FIX: Bảng liên kết Phiên khám - Triệu chứng
+            // Đổi SessionId thành DiagnosticSessionId cho khớp Entity. 
+            // Đổi HasKey thành HasIndex().IsUnique() vì bảng này đã có cột Id làm khóa chính.
             modelBuilder.Entity<SessionSymptom>()
-                .HasKey(ss => new { ss.SessionId, ss.SymptomId });
+                .HasIndex(ss => new { ss.DiagnosticSessionId, ss.SymptomId }).IsUnique();
 
             // 3. QUAN HỆ ĐẶC BIỆT (1-1)
             // Một User (nếu là USER) chỉ có 1 Hồ sơ Patient

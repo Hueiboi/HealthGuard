@@ -4,7 +4,7 @@ namespace HealthGuard.Models.Dto
 {
     public class DiagnosticRequestDto
     {
-        // Danh sách triệu chứng hiển thị trên màn hình
-        public List<SymptomInputDto> Symptoms { get; set; } = new List<SymptomInputDto>();
+        public List<SymptomInputDto> SelectedSymptoms { get; set; } = new List<SymptomInputDto>();
     }
+
 }

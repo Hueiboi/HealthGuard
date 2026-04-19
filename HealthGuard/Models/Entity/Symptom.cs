@@ -1,20 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 
 namespace HealthGuard.Models.Entity
 {
     public class Symptom
     {
-        [Key]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
-        [Required]
-        [MaxLength(20)]
-        public string SymptomCode { get; set; } // VD: SYM01
+        // THÊM DÒNG NÀY ĐỂ FIX LỖI THIẾU SYMPTOMNAME
+        public string SymptomName { get; set; }
 
-        [Required]
-        [MaxLength(100)]
-        public string Name { get; set; } // VD: Ho khan
-
-        public string Description { get; set; }
+        // Nếu có các quan hệ (Navigation properties) thì giữ nguyên
+        public virtual ICollection<DiseaseSymptom> DiseaseSymptoms { get; set; }
+        public virtual ICollection<SessionSymptom> SessionSymptoms { get; set; }
     }
 }

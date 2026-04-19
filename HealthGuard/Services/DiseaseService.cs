@@ -1,77 +1,119 @@
-﻿using System;
+﻿using HealthGuard.Data; // Thay bằng namespace chứa HealthContext của ông
+using HealthGuard.Models.Dto;
+using HealthGuard.Models.Entity;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using HealthGuard.Models.Entities;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
-using HealthGuard.Mappers;
 
 namespace HealthGuard.Services
 {
     public class DiseaseService
     {
-        private readonly IDiseaseRepository _diseaseRepository;
-        private readonly IDiseaseMapper _diseaseMapper;
+        private readonly HealthContext _context;
 
-        public DiseaseService(IDiseaseRepository diseaseRepository, IDiseaseMapper diseaseMapper)
+        // Tiêm trực tiếp HealthContext, dọn dẹp Repo và Mapper cũ
+        public DiseaseService(HealthContext context)
         {
-            _diseaseRepository = diseaseRepository;
-            _diseaseMapper = diseaseMapper;
+            _context = context;
         }
 
-        public async Task<DiseaseDTO> CreateDiseaseAsync(DiseaseDTO request)
+        public async Task<DiseaseDto> CreateDiseaseAsync(DiseaseDto request)
         {
-            var disease = _diseaseMapper.ToEntity(request);
-            var savedDisease = await _diseaseRepository.SaveAsync(disease);
-            return _diseaseMapper.ToDTO(savedDisease);
-        }
-
-        public async Task<IEnumerable<DiseaseDTO>> GetAllDiseasesAsync(int page, int size, string keyword)
-        {
-            // Trong EF Core, tìm kiếm không phân biệt hoa thường có thể dùng string.Contains hoặc EF.Functions.Like
-            var diseases = await _diseaseRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
-
-            var dtos = new List<DiseaseDTO>();
-            foreach (var disease in diseases)
+            var disease = new Disease
             {
-                dtos.Add(_diseaseMapper.ToDTO(disease));
-            }
-            return dtos;
+                DiseaseCode = request.DiseaseCode,
+                DiseaseName = request.DiseaseName,
+                TreatmentAdvice = request.TreatmentAdvice
+            };
+
+            _context.Diseases.Add(disease);
+            await _context.SaveChangesAsync(); // Lưu xuống DB để lấy Id tự sinh
+
+            request.Id = disease.Id;
+            return request;
         }
 
-        public async Task<DiseaseDTO> GetDiseaseByIdAsync(long id)
+        public async Task<IEnumerable<DiseaseDto>> GetAllDiseasesAsync(int page, int size, string keyword)
         {
-            var disease = await _diseaseRepository.FindByIdAsync(id);
+            var query = _context.Diseases.AsQueryable();
+
+            // Xử lý tìm kiếm bằng LINQ
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                string lowerKeyword = keyword.ToLower();
+                query = query.Where(d => d.DiseaseName.ToLower().Contains(lowerKeyword) ||
+                                         d.DiseaseCode.ToLower().Contains(lowerKeyword));
+            }
+
+            // Phân trang và map trực tiếp sang DTO
+            return await query
+                .OrderBy(d => d.DiseaseName)
+                .Skip((page - 1) * size)
+                .Take(size)
+                .Select(d => new DiseaseDto
+                {
+                    Id = d.Id,
+                    DiseaseCode = d.DiseaseCode,
+                    DiseaseName = d.DiseaseName,
+                    TreatmentAdvice = d.TreatmentAdvice
+                })
+                .ToListAsync();
+        }
+
+        public async Task<DiseaseDto> GetDiseaseByIdAsync(long id)
+        {
+            var disease = await _context.Diseases.FindAsync(id);
             if (disease == null)
             {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
+                // Dùng Exception chuẩn của .NET
+                throw new KeyNotFoundException($"Không tìm thấy bệnh lý với ID: {id}");
             }
-            return _diseaseMapper.ToDTO(disease);
+
+            return new DiseaseDto
+            {
+                Id = disease.Id,
+                DiseaseCode = disease.DiseaseCode,
+                DiseaseName = disease.DiseaseName,
+                TreatmentAdvice = disease.TreatmentAdvice
+            };
         }
 
-        public async Task<DiseaseDTO> UpdateDiseaseAsync(long id, DiseaseDTO request)
+        public async Task<DiseaseDto> UpdateDiseaseAsync(long id, DiseaseDto request)
         {
-            var existingDisease = await _diseaseRepository.FindByIdAsync(id);
+            var existingDisease = await _context.Diseases.FindAsync(id);
             if (existingDisease == null)
             {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
+                throw new KeyNotFoundException($"Không tìm thấy bệnh lý với ID: {id}");
             }
 
-            // Map dữ liệu mới vào entity cũ
-            _diseaseMapper.UpdateEntityFromDTO(request, existingDisease);
+            // Cập nhật dữ liệu (Thay cho Mapper)
+            existingDisease.DiseaseCode = request.DiseaseCode;
+            existingDisease.DiseaseName = request.DiseaseName;
+            existingDisease.TreatmentAdvice = request.TreatmentAdvice;
 
-            var updatedDisease = await _diseaseRepository.SaveAsync(existingDisease);
-            return _diseaseMapper.ToDTO(updatedDisease);
+            await _context.SaveChangesAsync(); // EF Core tự theo dõi và cập nhật
+
+            return new DiseaseDto
+            {
+                Id = existingDisease.Id,
+                DiseaseCode = existingDisease.DiseaseCode,
+                DiseaseName = existingDisease.DiseaseName,
+                TreatmentAdvice = existingDisease.TreatmentAdvice
+            };
         }
 
         public async Task DeleteDiseaseAsync(long id)
         {
-            var disease = await _diseaseRepository.FindByIdAsync(id);
+            var disease = await _context.Diseases.FindAsync(id);
             if (disease == null)
             {
-                throw new Exception($"Không tìm thấy bệnh lý với ID: {id}");
+                throw new KeyNotFoundException($"Không tìm thấy bệnh lý với ID: {id}");
             }
-            await _diseaseRepository.DeleteAsync(disease);
+
+            _context.Diseases.Remove(disease);
+            await _context.SaveChangesAsync();
         }
     }
 }

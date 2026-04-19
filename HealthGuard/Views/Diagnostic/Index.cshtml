@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "Select Symptoms";
+}
+
+@section Styles {
+    <style>
+        .wizard-container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .wizard-subtitle {
+            color: #2c6fb0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .wizard-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .wizard-desc {
+            color: #555;
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .progress-track {
+            height: 6px;
+            background-color: #e5e9f2;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #346cb0;
+            width: 25%;
+            border-radius: 10px;
+        }
+
+        .symptom-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            background-color: #f4f6f8;
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+            .search-box input {
+                border: none;
+                background: transparent;
+                width: 100%;
+                outline: none;
+                margin-left: 10px;
+            }
+
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .symptom-chip {
+            background-color: #f4f6f8;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+
+            .symptom-chip.selected {
+                background-color: #e2eafc;
+                border-color: #346cb0;
+                color: #1a4d8c;
+            }
+
+        .icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.2rem;
+        }
+
+        .symptom-chip.selected .icon-circle {
+            background-color: #346cb0;
+            color: white;
+        }
+
+        .action-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .action-footer a{
+                text-decoration: none;
+        }
+
+
+        .btn-continue {
+            background-color: #0d47a1;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+            .btn-continue i {
+                margin-left: 8px;
+            }
+
+        .btn-cancel {
+            background: none;
+            border: none;
+            color: #346cb0;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+}
+
+<div class="wizard-container">
+    <div class="wizard-subtitle">DIAGNOSIS WIZARD &bull; STEP 1 OF 3</div>
+    <h1 class="wizard-title">Select Symptoms</h1>
+    <p class="wizard-desc">To help us understand your condition, please select all symptoms you are currently experiencing.</p>
+
+    <div class="progress-track"><div class="progress-fill"></div></div>
+
+    <div class="symptom-card">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Search symptoms...">
+        </div>
+        <div class="symptoms-grid" id="symptomGrid">
+            <div class="text-primary"><i class="spinner-border spinner-border-sm"></i> Đang tải dữ liệu...</div>
+        </div>
+    </div>
+
+    <div class="action-footer">
+        <button class="btn-cancel"><a href="/Home/Index"><i class="bi bi-arrow-left"></i> Cancel</a></button>
+        <button class="btn-continue" onclick="submitSymptoms()">Continue to Details <i class="bi bi-arrow-right"></i></button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch('/api/patient/diagnose/symptoms');
+                const data = await response.json();
+
+                const grid = document.getElementById('symptomGrid');
+                grid.innerHTML = "";
+
+                data.forEach(s => {
+                    const chip = document.createElement('div');
+                    chip.className = 'symptom-chip';
+                    chip.setAttribute('data-id', s.id);
+                    chip.innerHTML = `<div class="icon-circle"><i class="bi bi-activity"></i></div><span>${s.symptomName}</span>`;
+                    chip.onclick = function() { this.classList.toggle('selected'); };
+                    grid.appendChild(chip);
+                });
+            } catch (err) {
+                console.error("Lỗi:", err);
+            }
+        });
+
+        function submitSymptoms() {
+            const selected = document.querySelectorAll('.symptom-chip.selected');
+            if(selected.length === 0) {
+                alert("Vui lòng chọn ít nhất 1 triệu chứng!");
+                return;
+            }
+
+            const selectedData = Array.from(selected).map(c => {
+                return { id: c.getAttribute('data-id'), name: c.querySelector('span').innerText };
+            });
+
+            sessionStorage.setItem('healthGuard_Symptoms', JSON.stringify(selectedData));
+            window.location.href = '/Diagnostic/Details';
+        }
+    </script>
+}

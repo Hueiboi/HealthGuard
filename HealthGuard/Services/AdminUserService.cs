@@ -1,86 +1,129 @@
-﻿using HealthGuard.Mappers;
-using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Models.Dto;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using HealthGuard.Data; // Thay bằng namespace chứa HealthContext của ông
 
 namespace HealthGuard.Services
 {
     public class AdminUserService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IRoleRepository _roleRepository;
-        private readonly IUserMapper _userMapper;
+        private readonly HealthContext _context;
 
-        public AdminUserService(
-            IUserRepository userRepository,
-            IRoleRepository roleRepository,
-            IUserMapper userMapper)
+        public AdminUserService(HealthContext context)
         {
-            _userRepository = userRepository;
-            _roleRepository = roleRepository;
-            _userMapper = userMapper;
+            _context = context;
         }
 
-        // Tùy thuộc vào cách bạn thiết kế Repository, hàm này có thể trả về một đối tượng PagedResult tùy chỉnh.
-        public async Task<IEnumerable<UserResponseDTO>> GetAllUsersAsync(int page, int size, string keyword)
+        public async Task<IEnumerable<UserResponseDto>> GetAllUsersAsync(int page, int size, string keyword)
         {
-            // Logic phân trang (Skip/Take) và tìm kiếm thường được viết bên trong Repository
-            var users = await _userRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
+            // 1. Tạo Query cơ bản, nhớ Include Role để lấy được RoleName
+            var query = _context.Users.Include(u => u.Role).AsQueryable();
 
-            var userDtos = new List<UserResponseDTO>();
-            foreach (var user in users)
+            // 2. Xử lý tìm kiếm (Nếu admin có gõ keyword)
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                userDtos.Add(_userMapper.ToDTO(user));
+                string lowerKeyword = keyword.ToLower();
+                // Giả định tìm theo Username hoặc Email
+                query = query.Where(u => u.Username.ToLower().Contains(lowerKeyword) ||
+                                         u.Email.ToLower().Contains(lowerKeyword));
             }
-            return userDtos;
+
+            // 3. Phân trang, sắp xếp và Map thẳng sang DTO trên câu lệnh SQL
+            var users = await query
+                .OrderByDescending(u => u.CreatedAt) // Khuyên dùng: Mới tạo thì lên đầu
+                .Skip((page - 1) * size)
+                .Take(size)
+                .Select(u => new UserResponseDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    RoleName = u.Role.RoleName,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return users;
         }
 
-        public async Task<UserResponseDTO> GetUserByIdAsync(long id)
+        public async Task<UserResponseDto> GetUserByIdAsync(long id)
         {
-            var user = await _userRepository.FindByIdAsync(id);
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (user == null)
+                throw new KeyNotFoundException($"Không tìm thấy người dùng có ID: {id}");
+
+            return new UserResponseDto
             {
-                throw new Exception($"Không tìm thấy người dùng có ID: {id}");
-            }
-            return _userMapper.ToDTO(user);
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                RoleName = user.Role.RoleName,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            };
         }
 
-        public async Task<UserResponseDTO> UpdateUserStatusAsync(long userId, bool isActive)
+        public async Task<UserResponseDto> UpdateUserStatusAsync(long userId, bool isActive)
         {
-            var user = await _userRepository.FindByIdAsync(userId);
-            if (user == null)
-            {
-                throw new Exception($"Không tìm thấy người dùng với ID: {userId}");
-            }
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
+            if (user == null)
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với ID: {userId}");
+
+            // Cập nhật trạng thái
             user.IsActive = isActive;
 
-            var updatedUser = await _userRepository.SaveAsync(user);
-            return _userMapper.ToDTO(updatedUser);
+            // EF Core tự Tracking sự thay đổi, chỉ cần Save
+            await _context.SaveChangesAsync();
+
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                RoleName = user.Role.RoleName,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            };
         }
 
-        public async Task<UserResponseDTO> ChangeUserRoleAsync(long userId, long roleId)
+        public async Task<UserResponseDto> ChangeUserRoleAsync(long userId, long roleId)
         {
-            var user = await _userRepository.FindByIdAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.Role) // Vẫn phải Include Role cũ để tí nữa còn trả về
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
             if (user == null)
-            {
-                throw new Exception($"Không tìm thấy người dùng với ID: {userId}");
-            }
+                throw new KeyNotFoundException($"Không tìm thấy người dùng với ID: {userId}");
 
-            var newRole = await _roleRepository.FindByIdAsync(roleId);
+            // Tìm Role mới
+            var newRole = await _context.Roles.FindAsync(roleId);
             if (newRole == null)
-            {
-                throw new Exception($"Không tìm thấy quyền với ID: {roleId}");
-            }
+                throw new KeyNotFoundException($"Không tìm thấy quyền với ID: {roleId}");
 
+            // Gán Role mới cho User
             user.Role = newRole;
 
-            var updatedUser = await _userRepository.SaveAsync(user);
-            return _userMapper.ToDTO(updatedUser);
+            await _context.SaveChangesAsync();
+
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                RoleName = user.Role.RoleName, // EF Core sẽ tự lấy tên của Role mới vừa gán
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            };
         }
     }
 }

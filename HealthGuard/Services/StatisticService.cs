@@ -1,40 +1,40 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Data;
+using HealthGuard.Models.Dto;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
     public class StatisticService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IDiagnosticSessionRepository _sessionRepository;
-        private readonly IDiagnosisResultRepository _resultRepository;
+        private readonly HealthContext _context;
 
-        public StatisticService(
-            IUserRepository userRepository,
-            IDiagnosticSessionRepository sessionRepository,
-            IDiagnosisResultRepository resultRepository)
+        public StatisticService(HealthContext context)
         {
-            _userRepository = userRepository;
-            _sessionRepository = sessionRepository;
-            _resultRepository = resultRepository;
+            _context = context;
         }
 
-        public async Task<DashboardStatsDTO> GetDashboardStatisticsAsync()
+        public async Task<DashboardStatsDto> GetDashboardStatisticsAsync()
         {
-            var stats = new DashboardStatsDTO();
+            var topDiseases = await _context.DiagnosisResults
+                .GroupBy(r => r.Disease.DiseaseName)
+                .Select(g => new TopDiseaseDto
+                {
+                    DiseaseName = g.Key,
+                    CasesCount = g.Count()
+                })
+                .OrderByDescending(d => d.CasesCount)
+                .Take(5)
+                .ToListAsync();
 
-            // Hàm CountAsync() của Entity Framework Core
-            stats.TotalUsers = await _userRepository.CountAsync();
-            stats.TotalDiagnosticSessions = await _sessionRepository.CountAsync();
-
-            // Giả định tầng Repository của bạn có hàm nhận tham số 'limit' để thực hiện .Take(5)
-            var topDiseases = await _resultRepository.FindTopDiseasesAsync(5);
-            stats.Top5Diseases = (List<TopDiseaseDTO>)topDiseases;
-
-            return stats;
+            return new DashboardStatsDto
+            {
+                TotalUsers = await _context.Users.CountAsync(),
+                TotalDiagnosticSessions = await _context.DiagnosticSessions.CountAsync(),
+                Top5Diseases = topDiseases
+            };
         }
     }
 }

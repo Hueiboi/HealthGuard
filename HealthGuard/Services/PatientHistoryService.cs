@@ -1,93 +1,71 @@
-﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Repositories;
+﻿using HealthGuard.Data;
+using HealthGuard.Models.Dto;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
     public class PatientHistoryService
     {
-        private readonly IDiagnosticSessionRepository _sessionRepository;
-        private readonly ISessionSymptomRepository _sessionSymptomRepository;
-        private readonly IDiagnosisResultRepository _diagnosisResultRepository;
+        private readonly HealthContext _context;
 
-        public PatientHistoryService(
-            IDiagnosticSessionRepository sessionRepository,
-            ISessionSymptomRepository sessionSymptomRepository,
-            IDiagnosisResultRepository diagnosisResultRepository)
+        public PatientHistoryService(HealthContext context)
         {
-            _sessionRepository = sessionRepository;
-            _sessionSymptomRepository = sessionSymptomRepository;
-            _diagnosisResultRepository = diagnosisResultRepository;
+            _context = context;
         }
 
         // Lấy danh sách tổng quan các lần khám
-        public async Task<IEnumerable<HistoryListDTO>> GetMyHistoryListAsync(string username, int page, int size)
+        public async Task<IEnumerable<HistoryListDto>> GetMyHistoryListAsync(string username, int page, int size)
         {
-            // Logic OrderByDescending(CreatedAt) và phân trang thực hiện ở Repository
-            var sessions = await _sessionRepository.FindByUserUsernameOrderByCreatedAtDescAsync(username, page, size);
-
-            var dtos = new List<HistoryListDTO>();
-            foreach (var session in sessions)
-            {
-                dtos.Add(new HistoryListDTO
+            // Dùng LINQ để phân trang và map DTO ngay trên SQL
+            return await _context.DiagnosticSessions
+                .Where(s => s.User.Username == username)
+                .OrderByDescending(s => s.CreatedAt)
+                .Skip((page - 1) * size)
+                .Take(size)
+                .Select(session => new HistoryListDto
                 {
                     SessionId = session.Id,
                     CreatedAt = session.CreatedAt,
                     Status = session.Status
-                });
-            }
-            return dtos;
+                })
+                .ToListAsync();
         }
 
         // Lấy chi tiết 1 lần khám
-        public async Task<HistoryDetailDTO> GetHistoryDetailAsync(string username, long sessionId)
+        public async Task<HistoryDetailDto> GetHistoryDetailAsync(string username, long sessionId)
         {
-            // Kiểm tra an toàn: Lấy session dựa trên cả ID và Username để chống xem trộm
-            var session = await _sessionRepository.FindByIdAndUserUsernameAsync(sessionId, username);
+            // Dùng Include và ThenInclude để lấy sạch dữ liệu liên quan trong 1 nốt nhạc
+            var session = await _context.DiagnosticSessions
+                .Include(s => s.SessionSymptoms).ThenInclude(ss => ss.Symptom)
+                .Include(s => s.DiagnosisResults).ThenInclude(dr => dr.Disease)
+                .FirstOrDefaultAsync(s => s.Id == sessionId && s.User.Username == username);
+
             if (session == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu hoặc bạn không có quyền xem lịch sử này!");
+                throw new UnauthorizedAccessException("Không tìm thấy dữ liệu hoặc bạn không có quyền xem lịch sử này!");
             }
 
-            var detailDTO = new HistoryDetailDTO
+            return new HistoryDetailDto
             {
                 SessionId = session.Id,
                 CreatedAt = session.CreatedAt,
-                Symptoms = new List<HistoryDetailDTO.SymptomItem>(),
-                Results = new List<HistoryDetailDTO.ResultItem>()
-            };
-
-            // Lấy danh sách triệu chứng đã chọn
-            var symptoms = await _sessionSymptomRepository.FindByDiagnosticSessionIdAsync(sessionId);
-            foreach (var s in symptoms)
-            {
-                detailDTO.Symptoms.Add(new HistoryDetailDTO.SymptomItem
+                Symptoms = session.SessionSymptoms.Select(s => new HistoryDetailDto.SymptomItem
                 {
-                    // Đảm bảo navigation property Symptom đã được Include() ở Repository
                     SymptomName = s.Symptom.SymptomName,
                     DurationDays = s.DurationDays,
                     SeverityLevel = s.SeverityLevel
-                });
-            }
-
-            // Lấy danh sách kết quả bệnh
-            var results = await _diagnosisResultRepository.FindByDiagnosticSessionIdAsync(sessionId);
-            foreach (var r in results)
-            {
-                detailDTO.Results.Add(new HistoryDetailDTO.ResultItem
+                }).ToList(),
+                Results = session.DiagnosisResults.Select(r => new HistoryDetailDto.ResultItem
                 {
-                    // Đảm bảo navigation property Disease đã được Include() ở Repository
                     DiseaseName = r.Disease.DiseaseName,
-                    ProbabilityPercentage = r.ProbabilityPercentage,
+                    ProbabilityPercentage = (float)r.ProbabilityPercentage,
                     TreatmentAdvice = r.Disease.TreatmentAdvice
-                });
-            }
-
-            return detailDTO;
+                }).ToList()
+            };
         }
     }
 }

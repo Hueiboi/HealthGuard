@@ -1,8 +1,634 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Trang chủ bệnh nhân";
+    Layout = null; // Tạm thời để null để full màn hình giống thiết kế, sau này ông rảnh thì tách Sidebar ra _Layout sau
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - HealthGuard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --sidebar-bg: #fdfdfd;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .brand-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            padding: 0 24px 30px;
+        }
+
+        .user-profile-sm {
+            padding: 0 24px 30px;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .user-id {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 8px 24px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+            .nav-link i {
+                margin-right: 12px;
+                font-size: 1.2rem;
+            }
+
+            .nav-link:hover {
+                background-color: #f1f5f9;
+                color: var(--text-dark);
+            }
+
+            .nav-link.active {
+                background-color: #eff6ff;
+                color: var(--primary-color);
+            }
+
+        .sidebar-footer {
+            padding: 24px;
+        }
+
+        .btn-health-tips {
+            width: 100%;
+            background-color: #eff6ff;
+            color: var(--primary-color);
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* HEADER */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background-color: white;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-bar {
+            background-color: #f1f5f9;
+            border-radius: 20px;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            width: 300px;
+        }
+
+            .search-bar i {
+                color: var(--text-muted);
+                margin-right: 10px;
+            }
+
+            .search-bar input {
+                border: none;
+                background: transparent;
+                outline: none;
+                width: 100%;
+                font-size: 0.9rem;
+            }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-wizard-top {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .icon-btn {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .avatar-top {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #1abc9c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* DASHBOARD CONTENT */
+        .dashboard-body {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .welcome-subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        /* Quick Actions & Recent */
+        .action-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+            .action-card:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            }
+
+            .action-card.primary {
+                background-color: var(--primary-color);
+                color: white;
+                border: none;
+            }
+
+        .action-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .action-card.primary .action-card-icon {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .recent-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 30px;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .recent-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .badge-success {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .recent-title {
+            font-weight: 800;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .recent-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        /* Metrics Grid */
+        .metric-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .metric-trend {
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .metric-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .metric-unit {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+
+        /* Banner Bottom */
+        .tip-banner {
+            background-color: #0f172a;
+            border-radius: 24px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 30px;
+            color: white;
+        }
+
+        .tip-content {
+            padding: 40px;
+            flex: 1;
+        }
+
+        .tip-label {
+            color: #38bdf8;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tip-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            line-height: 1.3;
+        }
+
+        .tip-desc {
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            max-width: 90%;
+        }
+
+        .tip-tags span {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+
+        .tip-image {
+            width: 350px;
+            background-image: url('https://images.unsplash.com/photo-1548839140-29a749e1bc4e?q=80&w=600&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="brand-logo">HealthGuard</div>
+
+        <div class="user-profile-sm">
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <h3 class="user-name">@User.Identity.Name</h3>
+                <p class="user-id">Patient ID: #8821</p>
+            }
+            else
+            {
+                <h3 class="user-name">Guest</h3>
+                <p class="user-id">Chưa đăng nhập</p>
+            }
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="/Home/Index" class="nav-link active"><i class="bi bi-grid-1x2"></i> Tổng quan</a></li>
+            <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-file-earmark-medical"></i> Hồ sơ y tế</a></li>
+            <li class="nav-item"><a href="/Diagnostic/Index" class="nav-link"><i class="bi bi-cpu"></i> Chẩn đoán AI</a></li>
+            <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-heart-pulse"></i> Kế hoạch chăm sóc</a></li>
+            <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i> Tin nhắn</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-health-tips">View Health Tips</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input type="text" placeholder="Tìm kiếm hồ sơ, thuốc...">
+            </div>
+            <div class="header-actions">
+                <a href="/Diagnostic/Index" class="btn-wizard-top"><i class="bi bi-stars"></i> AI Diagnosis Wizard</a>
+                <i class="bi bi-bell icon-btn"></i>
+
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <div class="avatar-top" title="@User.Identity.Name">
+                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                    </div>
+                }
+                else
+                {
+                    <i class="bi bi-person-circle fs-3 icon-btn" style="color: #94a3b8;" title="Guest"></i>
+                }
+            </div>
+        </header>
+
+        <div class="dashboard-body">
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <h1 class="welcome-title">Chào @User.Identity.Name!</h1>
+            }
+            else
+            {
+                <h1 class="welcome-title">Chào Khách!</h1>
+            }
+            <p class="welcome-subtitle">Hôm nay bạn cảm thấy thế nào? Cùng kiểm tra các chỉ số sức khỏe của mình nhé.</p>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-5">
+                    <div class="section-title">Thao tác nhanh</div>
+
+                    <a href="/Diagnostic/Index" class="action-card primary">
+                        <div class="d-flex align-items-center">
+                            <div class="action-card-icon"><i class="bi bi-robot"></i></div>
+                            <span>Bắt đầu chẩn đoán AI</span>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    <a href="#" class="action-card">
+                        <div class="d-flex align-items-center">
+                            <div class="action-card-icon"><i class="bi bi-clock-history"></i></div>
+                            <span>Xem lịch sử khám</span>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    <a href="#" class="action-card">
+                        <div class="d-flex align-items-center">
+                            <div class="action-card-icon"><i class="bi bi-person-vcard"></i></div>
+                            <span>Cập nhật hồ sơ</span>
+                        </div>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+
+                <div class="col-md-7">
+                    <div class="section-title">Hoạt động gần đây</div>
+
+                    @if (ViewBag.HasRecentDiagnosis == true)
+                    {
+                        <div class="recent-card position-relative overflow-hidden">
+                            <i class="bi bi-clipboard2-pulse position-absolute" style="font-size: 8rem; color: #f8fafc; right: -20px; top: -20px; z-index: 0;"></i>
+                            <div class="position-relative" style="z-index: 1;">
+                                <span class="badge-success"><i class="bi bi-check-circle me-1"></i> KẾT QUẢ MỚI NHẤT</span>
+                                <h3 class="recent-title">Chẩn đoán tổng quát từ AI</h3>
+                                <p class="recent-desc">Hệ thống đã ghi nhận các triệu chứng của bạn và thực hiện phân tích bằng mô hình Logistic Regression.</p>
+
+                                <div class="d-flex gap-5 mb-3">
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Ngày thực hiện</div>
+                                        <div style="font-weight: 700;">@ViewBag.DiagnosisDate</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Độ tin cậy AI</div>
+                                        <div style="font-weight: 700; color: var(--primary-color);">@ViewBag.DiagnosisScore</div>
+                                    </div>
+                                </div>
+                                <a href="#" class="text-decoration-none fw-bold" style="color: var(--primary-color); font-size: 0.9rem;">Xem báo cáo chi tiết <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center d-flex flex-column justify-content-center align-items-center" style="background: white; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 40px 20px; height: 100%; min-height: 250px;">
+                            <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="mt-3 text-dark fw-bold" style="font-size: 1.1rem;">Chưa có lịch sử chẩn đoán</h4>
+                            <p class="text-muted mb-3" style="font-size: 0.9rem;">Hãy cung cấp triệu chứng và sử dụng AI Diagnosis Wizard để đánh giá tình trạng của bạn.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (ViewBag.HasHealthRecords == true)
+            {
+                <div class="row g-4">
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <div class="metric-icon" style="background: #ffe4e6; color: #e11d48;"><i class="bi bi-heart-fill"></i></div>
+                                <span class="metric-trend text-success">+2 bpm</span>
+                            </div>
+                            <div class="metric-title">Nhịp tim</div>
+                            <div class="metric-value">72 <span class="metric-unit">bpm</span></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <div class="metric-icon" style="background: #e0e7ff; color: #4f46e5;"><i class="bi bi-aspect-ratio"></i></div>
+                                <span class="metric-trend text-muted">Ổn định</span>
+                            </div>
+                            <div class="metric-title">Chỉ số BMI</div>
+                            <div class="metric-value">22.4 <span class="metric-unit">Bình thường</span></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <div class="metric-icon" style="background: #fef3c7; color: #d97706;"><i class="bi bi-lightning-fill"></i></div>
+                                <span class="metric-trend text-danger">-5%</span>
+                            </div>
+                            <div class="metric-title">Mức năng lượng</div>
+                            <div class="metric-value">85 <span class="metric-unit">%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <div class="metric-header">
+                                <div class="metric-icon" style="background: #dcfce7; color: #16a34a;"><i class="bi bi-moon-stars-fill"></i></div>
+                                <span class="metric-trend text-success">+45m</span>
+                            </div>
+                            <div class="metric-title">Giấc ngủ</div>
+                            <div class="metric-value">7h 20 <span class="metric-unit">phút</span></div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center" style="background: white; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 40px 20px;">
+                    <i class="bi bi-folder-x text-muted" style="font-size: 3.5rem;"></i>
+                    <h4 class="mt-3 text-dark fw-bold" style="font-size: 1.2rem;">Chưa có dữ liệu sức khỏe</h4>
+                    <p class="text-muted mb-4" style="font-size: 0.95rem;">Bạn cần cập nhật hồ sơ y tế chiều cao, cân nặng để hệ thống có thể theo dõi và phân tích các chỉ số.</p>
+                    <a href="#" style="background-color: var(--primary-color); color: white; padding: 10px 24px; border-radius: 20px; text-decoration: none; font-weight: 600;">
+                        <i class="bi bi-pencil-square me-2"></i>Cập nhật hồ sơ ngay
+                    </a>
+                </div>
+            }
+
+            <div class="tip-banner">
+                <div class="tip-content">
+                    <div class="tip-label"><i class="bi bi-lightbulb-fill"></i> Lời khuyên sức khỏe hôm nay</div>
+                    <h2 class="tip-title">Uống nước ngay sau khi thức dậy giúp kích hoạt các cơ quan nội tạng.</h2>
+                    <p class="tip-desc">Thói quen này không chỉ giúp bù nước sau giấc ngủ dài mà còn hỗ trợ quá trình đào thải độc tố và tăng cường trao đổi chất khởi đầu ngày mới.</p>
+                    <div class="tip-tags">
+                        <span>#Hydration</span>
+                        <span>#MorningRoutine</span>
+                    </div>
+                </div>
+                <div class="tip-image"></div>
+            </div>
+
+        </div>
+    </main>
+
+</body>
+</html>

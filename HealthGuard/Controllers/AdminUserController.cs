@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthGuard.Services;
-using HealthGuard.Models.DTOs;
 
 namespace HealthGuard.Controllers
 {
