@@ -5,7 +5,7 @@ namespace HealthGuard.Models.Entity
     public class Role
     {
         [Key]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         [Required]
         [MaxLength(50)]

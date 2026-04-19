@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using HealthGuard.Services;
-using HealthGuard.Models.DTOs;
+using HealthGuard.Models.Dto;
 
 namespace HealthGuard.Controllers
 {
@@ -19,7 +19,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateDiseaseAsync([FromBody] DiseaseDTO request)
+        public async Task<IActionResult> CreateDiseaseAsync([FromBody] DiseaseDto request)
         {
             var createdDisease = await _diseaseService.CreateDiseaseAsync(request);
             return StatusCode(201, createdDisease); // Trả về HttpStatus.CREATED
@@ -43,7 +43,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDiseaseAsync([FromRoute] long id, [FromBody] DiseaseDTO request)
+        public async Task<IActionResult> UpdateDiseaseAsync([FromRoute] long id, [FromBody] DiseaseDto request)
         {
             var updatedDisease = await _diseaseService.UpdateDiseaseAsync(id, request);
             return Ok(updatedDisease);

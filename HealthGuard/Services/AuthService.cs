@@ -1,103 +1,94 @@
 ﻿using BCrypt.Net;
+using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
 using HealthGuard.Models.Entity;
-using HealthGuard.Models.model;
-using HealthGuard.Repositories;
-using HealthGuard.Security; // Thư mục chứa IJwtUtils giả định
-using Microsoft.CodeAnalysis.Scripting;
+using HealthGuard.Security;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
-    // UC01: Đăng nhập/Đăng ký
     public class AuthService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IRoleRepository _roleRepository;
-        private readonly IPatientRepository _patientRepository;
+        private readonly HealthContext _context;
         private readonly IJwtUtils _jwtUtils;
 
-        // Tiêm CustomUserDetailService vào đây để dùng giống luồng Spring Boot
-        private readonly CustomUserDetailService _customUserDetailService;
-
-        public AuthService(
-            IUserRepository userRepository,
-            IRoleRepository roleRepository,
-            IPatientRepository patientRepository,
-            IJwtUtils jwtUtils,
-            CustomUserDetailService customUserDetailService)
+        public AuthService(HealthContext context, IJwtUtils jwtUtils)
         {
-            _userRepository = userRepository;
-            _roleRepository = roleRepository;
-            _patientRepository = patientRepository;
+            _context = context;
             _jwtUtils = jwtUtils;
-            _customUserDetailService = customUserDetailService;
         }
 
-        public async Task<UserResponseDTO> RegisterAsync(RegisterRequestDTO request)
+        public async Task<UserResponseDto> RegisterAsync(RegisterRequestDto request)
         {
-            if (await _userRepository.ExistsByUsernameAsync(request.Username))
+            // 1. Chỉ check trùng Email vì form đăng ký không bắt nhập Username nữa
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                throw new InvalidOperationException("Email đã được sử dụng!");
+
+            // 2. Tự động sinh Username từ Email (VD: nam@gmail.com -> nam)
+            string generatedUsername = request.Email.Split('@')[0];
+
+            // Check nhẹ xem username này có ai xài chưa, nếu có thì gắn thêm chuỗi ngẫu nhiên
+            if (await _context.Users.AnyAsync(u => u.Username == generatedUsername))
             {
-                throw new Exception("Tên đăng nhập đã tồn tại!");
+                generatedUsername = $"{generatedUsername}_{Guid.NewGuid().ToString("N").Substring(0, 4)}";
             }
 
-            if (await _userRepository.ExistsByEmailAsync(request.Email))
-            {
-                throw new Exception("Email đã được sử dụng!");
-            }
+            var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "ROLE_USER")
+                            ?? throw new InvalidOperationException("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
 
-            var userRole = await _roleRepository.FindByRoleNameAsync("ROLE_USER");
-            if (userRole == null)
-            {
-                throw new Exception("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
-            }
-
+            // 3. Tạo User mới
             var newUser = new User
             {
-                Username = request.Username,
+                Username = generatedUsername, // Dùng username tự sinh
                 Email = request.Email,
                 Role = userRole,
                 IsActive = true,
                 Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
-            var savedUser = await _userRepository.SaveAsync(newUser);
+            _context.Users.Add(newUser);
 
+            // 4. Tạo Patient mới
             var newPatient = new Patient
             {
-                User = savedUser,
-                FullName = request.Username
+                User = newUser,
+                FullName = request.FullName, // Lấy tên thật từ Form đăng ký
+                MedicalHistory = null
+                // ĐÃ XÓA `Gender = null` vì DB của ông không còn cột này nữa
             };
-            await _patientRepository.SaveAsync(newPatient);
 
-            return new UserResponseDTO
+            _context.Patients.Add(newPatient);
+
+            // 5. Lưu 1 lần duy nhất cho cả 2 bảng
+            await _context.SaveChangesAsync();
+
+            return new UserResponseDto
             {
-                Id = savedUser.Id,
-                Username = savedUser.Username,
-                Email = savedUser.Email,
-                RoleName = savedUser.Role.RoleName,
-                IsActive = savedUser.IsActive,
-                CreatedAt = savedUser.CreatedAt
+                Id = newUser.Id,
+                Username = newUser.Username,
+                Email = newUser.Email,
+                RoleName = newUser.Role.RoleName,
+                IsActive = newUser.IsActive,
+                CreatedAt = newUser.CreatedAt,
             };
         }
 
-        public async Task<string> LoginAsync(LoginRequestDTO request)
+        public async Task<string> LoginAsync(LoginRequestDto request)
         {
-            // 1. Nhờ CustomUserDetailService kiểm tra xem User có tồn tại và đang active không
-            // (Giống hệt cách Spring Security gọi loadUserByUsername)
-            var user = await _customUserDetailService.LoadUserByUsernameAsync(request.EmailOrUsername);
+            var user = await _context.Users
+                .Include(u => u.Role)
+                // Tìm kiếm bằng cả Username HOẶC Email
+                .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Username);
 
-            // 2. Kiểm tra mật khẩu bằng BCrypt
+            if (user == null || !user.IsActive)
+                throw new UnauthorizedAccessException("Sai tài khoản, mật khẩu hoặc tài khoản bị khóa!");
+
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
-            {
-                throw new Exception("Sai tài khoản hoặc mật khẩu!");
-            }
+                throw new UnauthorizedAccessException("Sai tài khoản hoặc mật khẩu!");
 
-            // 3. Sinh JWT Token
             return _jwtUtils.GenerateJwtToken(user);
         }
     }

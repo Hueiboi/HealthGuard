@@ -1,134 +1,123 @@
-﻿using HealthGuard.Mappers;
+﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
-using HealthGuard.Models.Entity;
-using HealthGuard.Repositories;
+using HealthGuard.Models.Entity; // Chuẩn folder Entity số ít của ông
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
     public class SymptomService
     {
-        private readonly ISymptomRepository _symptomRepository;
-        private readonly ISymptomMapper _symptomMapper;
-        private readonly IDiseaseSymptomRepository _diseaseSymptomRepository;
-        private readonly IDiseaseRepository _diseaseRepository;
+        private readonly HealthContext _context;
 
-        public SymptomService(
-            ISymptomRepository symptomRepository,
-            ISymptomMapper symptomMapper,
-            IDiseaseSymptomRepository diseaseSymptomRepository,
-            IDiseaseRepository diseaseRepository)
+        public SymptomService(HealthContext context)
         {
-            _symptomRepository = symptomRepository;
-            _symptomMapper = symptomMapper;
-            _diseaseSymptomRepository = diseaseSymptomRepository;
-            _diseaseRepository = diseaseRepository;
+            _context = context;
         }
 
-        public async Task<SymptomDTO> CreateSymptomAsync(SymptomDTO request)
+        public async Task<SymptomDto> CreateSymptomAsync(SymptomDto request)
         {
-            var symptom = _symptomMapper.ToEntity(request);
-            var savedSymptom = await _symptomRepository.SaveAsync(symptom);
-            return _symptomMapper.ToDTO(savedSymptom);
+            var symptom = new Symptom { SymptomName = request.SymptomName };
+            _context.Symptoms.Add(symptom);
+            await _context.SaveChangesAsync();
+
+            request.Id = symptom.Id;
+            return request;
         }
 
-        public async Task<SymptomDTO> GetSymptomByIdAsync(long id)
+        public async Task<SymptomDto> GetSymptomByIdAsync(long id)
         {
-            var symptom = await _symptomRepository.FindByIdAsync(id);
-            if (symptom == null)
-            {
-                throw new Exception($"Không tìm thấy triệu chứng có ID: {id}");
-            }
-            return _symptomMapper.ToDTO(symptom);
+            var symptom = await _context.Symptoms.FindAsync(id);
+            if (symptom == null) throw new KeyNotFoundException($"Không tìm thấy triệu chứng ID: {id}");
+
+            return new SymptomDto { Id = symptom.Id, SymptomName = symptom.SymptomName };
         }
 
-        public async Task<IEnumerable<SymptomDTO>> GetAllSymptomsAsync(int page, int size, string keyword)
+        public async Task<IEnumerable<SymptomDto>> GetAllSymptomsAsync(int page, int size, string keyword)
         {
-            var symptoms = await _symptomRepository.FindAllWithPaginationAndSearchAsync(page, size, keyword);
-            var dtos = new List<SymptomDTO>();
+            var query = _context.Symptoms.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(s => s.SymptomName.ToLower().Contains(keyword.ToLower()));
 
-            foreach (var symptom in symptoms)
-            {
-                dtos.Add(_symptomMapper.ToDTO(symptom));
-            }
-            return dtos;
+            // Nếu phân trang page bắt đầu từ 1, thì (page - 1) * size. 
+            // Nếu API của ông truyền page từ 0 thì ông sửa thành page * size nhé.
+            return await query
+                .OrderBy(s => s.SymptomName)
+                .Skip((page > 0 ? page - 1 : 0) * size)
+                .Take(size)
+                .Select(s => new SymptomDto { Id = s.Id, SymptomName = s.SymptomName })
+                .ToListAsync();
         }
 
-        public async Task<SymptomDTO> UpdateSymptomAsync(long id, SymptomDTO request)
+        // ==========================================
+        // ĐÃ THÊM LẠI: Hàm cập nhật Triệu chứng (bị thiếu)
+        // ==========================================
+        public async Task<SymptomDto> UpdateSymptomAsync(long id, SymptomDto request)
         {
-            var existingSymptom = await _symptomRepository.FindByIdAsync(id);
+            var existingSymptom = await _context.Symptoms.FindAsync(id);
             if (existingSymptom == null)
             {
-                throw new Exception($"Không tìm thấy triệu chứng có ID: {id}");
+                throw new KeyNotFoundException($"Không tìm thấy triệu chứng với ID: {id}");
             }
 
-            _symptomMapper.UpdateEntityFromDTO(request, existingSymptom);
-            var updatedSymptom = await _symptomRepository.SaveAsync(existingSymptom);
-            return _symptomMapper.ToDTO(updatedSymptom);
+            existingSymptom.SymptomName = request.SymptomName;
+
+            // EF Core tự track thay đổi và sinh lệnh UPDATE
+            await _context.SaveChangesAsync();
+
+            return new SymptomDto { Id = existingSymptom.Id, SymptomName = existingSymptom.SymptomName };
         }
 
+        // ==========================================
+        // ĐÃ THÊM LẠI: Hàm xóa Triệu chứng (bị thiếu)
+        // ==========================================
         public async Task DeleteSymptomAsync(long id)
         {
-            var symptom = await _symptomRepository.FindByIdAsync(id);
+            var symptom = await _context.Symptoms.FindAsync(id);
             if (symptom == null)
             {
-                throw new Exception($"Không tìm thấy triệu chứng có ID: {id}");
+                throw new KeyNotFoundException($"Không tìm thấy triệu chứng với ID: {id}");
             }
-            await _symptomRepository.DeleteAsync(symptom);
+
+            _context.Symptoms.Remove(symptom);
+            await _context.SaveChangesAsync();
         }
 
-        // Hàm gắn triệu chứng vào bệnh và lưu trọng số
-        public async Task AssignWeightScoreAsync(WeightRuleDTO rule)
+        public async Task AssignWeightScoreAsync(WeightRuleDto rule)
         {
-            var disease = await _diseaseRepository.FindByIdAsync(rule.DiseaseId);
-            if (disease == null)
-            {
-                throw new Exception($"Không tìm thấy bệnh với ID: {rule.DiseaseId}");
-            }
+            var disease = await _context.Diseases.FindAsync(rule.DiseaseId)
+                ?? throw new KeyNotFoundException("Không tìm thấy bệnh.");
+            var symptom = await _context.Symptoms.FindAsync(rule.SymptomId)
+                ?? throw new KeyNotFoundException("Không tìm thấy triệu chứng.");
 
-            var symptom = await _symptomRepository.FindByIdAsync(rule.SymptomId);
-            if (symptom == null)
-            {
-                throw new Exception($"Không tìm thấy triệu chứng với ID: {rule.SymptomId}");
-            }
-
-            // Kiểm tra xem luật này đã có trong DB chưa
-            var diseaseSymptom = await _diseaseSymptomRepository.FindByDiseaseIdAndSymptomIdAsync(rule.DiseaseId, rule.SymptomId);
+            var diseaseSymptom = await _context.DiseaseSymptoms
+                .FirstOrDefaultAsync(ds => ds.DiseaseId == rule.DiseaseId && ds.SymptomId == rule.SymptomId);
 
             if (diseaseSymptom == null)
             {
-                // Nếu chưa có thì tạo mới
-                diseaseSymptom = new DiseaseSymptom();
+                diseaseSymptom = new DiseaseSymptom { DiseaseId = (int)rule.DiseaseId, SymptomId = (int)rule.SymptomId };
+                _context.DiseaseSymptoms.Add(diseaseSymptom);
             }
 
-            // Cập nhật dữ liệu
-            diseaseSymptom.Disease = disease;
-            diseaseSymptom.Symptom = symptom;
+            // Ép kiểu (float) để khớp với Entity
             diseaseSymptom.WeightScore = rule.WeightScore;
 
-            await _diseaseSymptomRepository.SaveAsync(diseaseSymptom);
+            await _context.SaveChangesAsync();
         }
 
-        // Lấy danh sách triệu chứng cùng trọng số
-        public async Task<IEnumerable<WeightRuleDTO>> GetSymptomsByDiseaseAsync(long diseaseId)
+        public async Task<IEnumerable<WeightRuleDto>> GetSymptomsByDiseaseAsync(long diseaseId)
         {
-            var diseaseSymptoms = await _diseaseSymptomRepository.FindByDiseaseIdAsync(diseaseId);
-            var resultList = new List<WeightRuleDTO>();
-
-            foreach (var ds in diseaseSymptoms)
-            {
-                resultList.Add(new WeightRuleDTO
+            return await _context.DiseaseSymptoms
+                .Where(ds => ds.DiseaseId == diseaseId)
+                .Select(ds => new WeightRuleDto
                 {
-                    DiseaseId = ds.Disease.Id,
-                    SymptomId = ds.Symptom.Id,
+                    DiseaseId = ds.DiseaseId,
+                    SymptomId = ds.SymptomId,
                     WeightScore = ds.WeightScore
-                });
-            }
-            return resultList;
+                }).ToListAsync();
         }
     }
 }

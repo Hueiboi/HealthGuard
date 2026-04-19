@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HealthGuard.Migrations
 {
     [DbContext(typeof(HealthContext))]
-    [Migration("20260418165553_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260419105746_UpdatePatientFields")]
+    partial class UpdatePatientFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,20 +27,20 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.DiagnosisResult", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<int>("DiseaseId")
-                        .HasColumnType("int");
+                    b.Property<long>("DiseaseId")
+                        .HasColumnType("bigint");
 
                     b.Property<double>("ProbabilityPercentage")
                         .HasColumnType("double");
 
-                    b.Property<int>("SessionId")
-                        .HasColumnType("int");
+                    b.Property<long>("SessionId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -53,17 +53,21 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.DiagnosticSession", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -74,25 +78,19 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.Disease", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("DiseaseCode")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("DiseaseName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TreatmentAdvice")
                         .IsRequired()
@@ -108,13 +106,13 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.DiseaseSymptom", b =>
                 {
-                    b.Property<int>("DiseaseId")
-                        .HasColumnType("int");
+                    b.Property<long>("DiseaseId")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("SymptomId")
-                        .HasColumnType("int");
+                    b.Property<long>("SymptomId")
+                        .HasColumnType("bigint");
 
-                    b.Property<double>("Weight")
+                    b.Property<double>("WeightScore")
                         .HasColumnType("double");
 
                     b.HasKey("DiseaseId", "SymptomId");
@@ -126,11 +124,11 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.Feedback", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Comments")
                         .IsRequired()
@@ -139,11 +137,11 @@ namespace HealthGuard.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("SessionId")
-                        .HasColumnType("int");
+                    b.Property<long>("SessionId")
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -156,11 +154,11 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.Patient", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<int>("Age")
                         .HasColumnType("int");
@@ -171,18 +169,19 @@ namespace HealthGuard.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<string>("Gender")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<double>("Height")
                         .HasColumnType("double");
 
                     b.Property<string>("MedicalHistory")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("UserId1")
+                        .HasColumnType("bigint");
 
                     b.Property<double>("Weight")
                         .HasColumnType("double");
@@ -192,16 +191,19 @@ namespace HealthGuard.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
+                    b.HasIndex("UserId1")
+                        .IsUnique();
+
                     b.ToTable("Patients");
                 });
 
             modelBuilder.Entity("HealthGuard.Models.Entity.Role", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("RoleName")
                         .IsRequired()
@@ -215,59 +217,58 @@ namespace HealthGuard.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 1,
+                            Id = 1L,
                             RoleName = "ROLE_ADMIN"
                         },
                         new
                         {
-                            Id = 2,
+                            Id = 2L,
                             RoleName = "ROLE_USER"
                         });
                 });
 
             modelBuilder.Entity("HealthGuard.Models.Entity.SessionSymptom", b =>
                 {
-                    b.Property<int>("SessionId")
-                        .HasColumnType("int");
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
 
-                    b.Property<int>("SymptomId")
-                        .HasColumnType("int");
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("DiagnosticSessionId")
+                        .HasColumnType("bigint");
 
                     b.Property<int>("DurationDays")
                         .HasColumnType("int");
 
-                    b.Property<string>("Severity")
+                    b.Property<string>("SeverityLevel")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("SessionId", "SymptomId");
+                    b.Property<long>("SymptomId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("SymptomId");
+
+                    b.HasIndex("DiagnosticSessionId", "SymptomId")
+                        .IsUnique();
 
                     b.ToTable("SessionSymptoms");
                 });
 
             modelBuilder.Entity("HealthGuard.Models.Entity.Symptom", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Description")
+                    b.Property<string>("SymptomName")
                         .IsRequired()
                         .HasColumnType("longtext");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("SymptomCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
 
                     b.HasKey("Id");
 
@@ -276,23 +277,33 @@ namespace HealthGuard.Migrations
 
             modelBuilder.Entity("HealthGuard.Models.Entity.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasMaxLength(15)
                         .HasColumnType("varchar(15)");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -301,8 +312,7 @@ namespace HealthGuard.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PhoneNumber")
-                        .IsUnique();
+                    b.HasIndex("PhoneNumber");
 
                     b.HasIndex("RoleId");
 
@@ -321,7 +331,7 @@ namespace HealthGuard.Migrations
                         .IsRequired();
 
                     b.HasOne("HealthGuard.Models.Entity.DiagnosticSession", "DiagnosticSession")
-                        .WithMany()
+                        .WithMany("DiagnosisResults")
                         .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -351,7 +361,7 @@ namespace HealthGuard.Migrations
                         .IsRequired();
 
                     b.HasOne("HealthGuard.Models.Entity.Symptom", "Symptom")
-                        .WithMany()
+                        .WithMany("DiseaseSymptoms")
                         .HasForeignKey("SymptomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -388,19 +398,23 @@ namespace HealthGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("HealthGuard.Models.Entity.User", null)
+                        .WithOne("Patient")
+                        .HasForeignKey("HealthGuard.Models.Entity.Patient", "UserId1");
+
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("HealthGuard.Models.Entity.SessionSymptom", b =>
                 {
                     b.HasOne("HealthGuard.Models.Entity.DiagnosticSession", "DiagnosticSession")
-                        .WithMany()
-                        .HasForeignKey("SessionId")
+                        .WithMany("SessionSymptoms")
+                        .HasForeignKey("DiagnosticSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("HealthGuard.Models.Entity.Symptom", "Symptom")
-                        .WithMany()
+                        .WithMany("SessionSymptoms")
                         .HasForeignKey("SymptomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -419,6 +433,26 @@ namespace HealthGuard.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("HealthGuard.Models.Entity.DiagnosticSession", b =>
+                {
+                    b.Navigation("DiagnosisResults");
+
+                    b.Navigation("SessionSymptoms");
+                });
+
+            modelBuilder.Entity("HealthGuard.Models.Entity.Symptom", b =>
+                {
+                    b.Navigation("DiseaseSymptoms");
+
+                    b.Navigation("SessionSymptoms");
+                });
+
+            modelBuilder.Entity("HealthGuard.Models.Entity.User", b =>
+                {
+                    b.Navigation("Patient")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

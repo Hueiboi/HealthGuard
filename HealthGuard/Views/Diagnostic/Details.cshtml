@@ -1,0 +1,370 @@
+﻿@{
+    ViewData["Title"] = "Chi tiết triệu chứng";
+    Layout = null; // TẮT LAYOUT ĐỂ DÙNG HEADER CHUẨN
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - HealthGuard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding-bottom: 50px;
+        }
+
+        /* --- CSS GIỮ NGUYÊN 100% CỦA ÔNG --- */
+        .wizard-container {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 50px;
+        }
+
+            .stepper::before {
+                content: '';
+                position: absolute;
+                top: 15px;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: #e0e0e0;
+                z-index: 1;
+            }
+
+        .stepper-progress {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            height: 3px;
+            background: #0d47a1;
+            z-index: 2;
+            width: 50%;
+            transition: 0.3s;
+        }
+
+        .step {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            background: #f4f6f8;
+            padding: 0 10px;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 8px auto;
+        }
+
+        .step.completed .step-circle {
+            background: #0d47a1;
+            color: white;
+        }
+
+        .step.active .step-circle {
+            background: #0d47a1;
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .step.active .step-label, .step.completed .step-label {
+            color: #0d47a1;
+        }
+
+        .wizard-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #111;
+        }
+
+        .wizard-desc {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 40px;
+        }
+
+        .detail-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+        }
+
+        .card-header-flex {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2eafc;
+            color: #0d47a1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.2rem;
+        }
+
+        .symptom-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #222;
+            margin: 0;
+        }
+
+        .input-group-custom {
+            display: flex;
+            gap: 30px;
+        }
+
+        .input-col {
+            flex: 1;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: block;
+            letter-spacing: 0.5px;
+        }
+
+        .intensity-group {
+            display: flex;
+            gap: 10px;
+            background: white;
+            border-radius: 30px;
+        }
+
+        .intensity-btn {
+            flex: 1;
+            background: #f4f6f8;
+            border: none;
+            padding: 10px 0;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+            .intensity-btn.active-mild {
+                background: #f1c40f;
+                color: white;
+            }
+
+            .intensity-btn.active-moderate {
+                background: #0d47a1;
+                color: white;
+            }
+
+            .intensity-btn.active-severe {
+                background: #c0392b;
+                color: white;
+            }
+
+        .duration-input {
+            width: 100%;
+            background: #f4f6f8;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #333;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .action-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+        }
+
+        .btn-back {
+            color: #0d47a1;
+            font-weight: 600;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btn-continue {
+            background-color: #0d47a1;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+            .btn-continue i {
+                margin-left: 10px;
+            }
+    </style>
+</head>
+<body>
+
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-bottom: 1px solid #e2e8f0; margin-bottom: 30px;">
+        <a asp-controller="Home" asp-action="Index" style="font-size: 1.6rem; font-weight: 800; color: #2563eb; text-decoration: none; letter-spacing: -0.5px;">
+            HealthGuard
+        </a>
+
+        <div style="flex: 1; max-width: 400px; margin: 0 20px;">
+            <div style="background-color: #f4f6f8; border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; color: #64748b;">
+                <i class="bi bi-search me-2"></i>
+                <input type="text" placeholder="Tìm kiếm hồ sơ, thuốc..." style="border: none; background: transparent; width: 100%; outline: none; color: #334155; font-size: 0.95rem;">
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <a asp-controller="Diagnostic" asp-action="Index" style="background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37,99,235,0.2);">
+                <i class="bi bi-stars"></i> AI Diagnosis Wizard
+            </a>
+
+            <i class="bi bi-bell" style="font-size: 1.2rem; color: #64748b; cursor: pointer;"></i>
+
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <div class="dropdown">
+                    <div class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; border-radius: 50%; background-color: #20c997; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none;">
+                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
+                        <li class="px-3 py-2 border-bottom mb-1">
+                            <p class="mb-0 fw-bold text-dark">@User.Identity.Name</p>
+                            <small class="text-muted">Bệnh nhân</small>
+                        </li>
+                        <li><a class="dropdown-item py-2" asp-controller="Patient" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
+                        <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-primary btn-sm fw-bold" style="border-radius: 20px; padding: 6px 20px;">Đăng nhập</a>
+            }
+        </div>
+    </nav>
+
+    <div class="wizard-container">
+        <div class="stepper">
+            <div class="stepper-progress"></div>
+            <div class="step completed"><div class="step-circle"><i class="bi bi-check-lg"></i></div><div class="step-label">Triệu chứng</div></div>
+            <div class="step active"><div class="step-circle">2</div><div class="step-label">Chi tiết</div></div>
+            <div class="step"><div class="step-circle">3</div><div class="step-label">Đánh giá</div></div>
+        </div>
+
+        <h1 class="wizard-title">Chi tiết triệu chứng</h1>
+        <p class="wizard-desc">Giúp chúng tôi hiểu rõ hơn về mức độ và thời gian kéo dài của các triệu chứng bạn đang gặp phải.</p>
+
+        <div id="dynamicCardsContainer"></div>
+
+        <div class="action-footer">
+            <a asp-controller="Diagnostic" asp-action="Index" class="btn-back">Quay lại chọn triệu chứng</a>
+            <button class="btn-continue" onclick="submitDetails()">Tiếp tục xem lại <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // LOGIC JAVASCRIPT GIỮ NGUYÊN 100%
+        let symptomDetails = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedData = sessionStorage.getItem('healthGuard_Symptoms');
+            if (!savedData) {
+                window.location.href = '@Url.Action("Index", "Diagnostic")';
+                return;
+            }
+
+            const symptoms = JSON.parse(savedData);
+            const container = document.getElementById('dynamicCardsContainer');
+
+            symptoms.forEach(s => {
+                symptomDetails.push({ id: s.id, name: s.name, intensity: 'Moderate', duration: 1 });
+                const cardHtml = `
+                    <div class="detail-card">
+                        <div class="card-header-flex">
+                            <div class="icon-circle"><i class="bi bi-activity"></i></div><h3 class="symptom-name">${s.name}</h3>
+                        </div>
+                        <div class="input-group-custom">
+                            <div class="input-col">
+                                <span class="input-label">Mức độ</span>
+                                <div class="intensity-group">
+                                    <button class="intensity-btn" onclick="setIntensity('${s.id}', 'Mild', this)">Nhẹ</button>
+                                    <button class="intensity-btn active-moderate" onclick="setIntensity('${s.id}', 'Moderate', this)">Vừa</button>
+                                    <button class="intensity-btn" onclick="setIntensity('${s.id}', 'Severe', this)">Nặng</button>
+                                </div>
+                            </div>
+                            <div class="input-col">
+                                <span class="input-label">Thời gian (Ngày)</span>
+                                <input type="number" class="duration-input" min="1" max="365" value="1" onchange="setDuration('${s.id}', this.value)">
+                            </div>
+                        </div>
+                    </div>`;
+                container.innerHTML += cardHtml;
+            });
+        });
+
+        function setIntensity(id, level, btnElement) {
+            const item = symptomDetails.find(x => x.id === id);
+            if(item) item.intensity = level;
+            const group = btnElement.parentElement;
+            group.querySelectorAll('.intensity-btn').forEach(b => b.classList.remove('active-mild', 'active-moderate', 'active-severe'));
+            btnElement.classList.add(`active-${level.toLowerCase()}`);
+        }
+
+        function setDuration(id, days) {
+            const item = symptomDetails.find(x => x.id === id);
+            if(item) item.duration = parseInt(days) || 1;
+        }
+
+        function submitDetails() {
+            sessionStorage.setItem('healthGuard_SymptomDetails', JSON.stringify(symptomDetails));
+            window.location.href = '@Url.Action("Review", "Diagnostic")';
+        }
+    </script>
+</body>
+</html>

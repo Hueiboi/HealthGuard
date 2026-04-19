@@ -21,13 +21,11 @@ namespace HealthGuard.Migrations
                 name: "Diseases",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    DiseaseCode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
+                    DiseaseCode = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: false)
+                    DiseaseName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TreatmentAdvice = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
@@ -42,7 +40,7 @@ namespace HealthGuard.Migrations
                 name: "Roles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     RoleName = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
@@ -57,13 +55,9 @@ namespace HealthGuard.Migrations
                 name: "Symptoms",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    SymptomCode = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Name = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: false)
+                    SymptomName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -76,15 +70,19 @@ namespace HealthGuard.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Username = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PasswordHash = table.Column<string>(type: "longtext", nullable: false)
+                    Email = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Password = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PhoneNumber = table.Column<string>(type: "varchar(15)", maxLength: 15, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    RoleId = table.Column<int>(type: "int", nullable: false)
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    RoleId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -102,9 +100,9 @@ namespace HealthGuard.Migrations
                 name: "DiseaseSymptoms",
                 columns: table => new
                 {
-                    DiseaseId = table.Column<int>(type: "int", nullable: false),
-                    SymptomId = table.Column<int>(type: "int", nullable: false),
-                    Weight = table.Column<double>(type: "double", nullable: false)
+                    DiseaseId = table.Column<long>(type: "bigint", nullable: false),
+                    SymptomId = table.Column<long>(type: "bigint", nullable: false),
+                    WeightScore = table.Column<double>(type: "double", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -128,10 +126,12 @@ namespace HealthGuard.Migrations
                 name: "DiagnosticSessions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    Status = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -149,9 +149,9 @@ namespace HealthGuard.Migrations
                 name: "Patients",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
                     FullName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Age = table.Column<int>(type: "int", nullable: false),
@@ -160,7 +160,8 @@ namespace HealthGuard.Migrations
                     Height = table.Column<double>(type: "double", nullable: false),
                     Weight = table.Column<double>(type: "double", nullable: false),
                     MedicalHistory = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId1 = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -171,6 +172,11 @@ namespace HealthGuard.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Patients_Users_UserId1",
+                        column: x => x.UserId1,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -178,10 +184,10 @@ namespace HealthGuard.Migrations
                 name: "DiagnosisResults",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    SessionId = table.Column<int>(type: "int", nullable: false),
-                    DiseaseId = table.Column<int>(type: "int", nullable: false),
+                    SessionId = table.Column<long>(type: "bigint", nullable: false),
+                    DiseaseId = table.Column<long>(type: "bigint", nullable: false),
                     ProbabilityPercentage = table.Column<double>(type: "double", nullable: false)
                 },
                 constraints: table =>
@@ -206,10 +212,10 @@ namespace HealthGuard.Migrations
                 name: "Feedbacks",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    SessionId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    SessionId = table.Column<long>(type: "bigint", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
                     Comments = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
@@ -236,18 +242,20 @@ namespace HealthGuard.Migrations
                 name: "SessionSymptoms",
                 columns: table => new
                 {
-                    SessionId = table.Column<int>(type: "int", nullable: false),
-                    SymptomId = table.Column<int>(type: "int", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     DurationDays = table.Column<int>(type: "int", nullable: false),
-                    Severity = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    SeverityLevel = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DiagnosticSessionId = table.Column<long>(type: "bigint", nullable: false),
+                    SymptomId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SessionSymptoms", x => new { x.SessionId, x.SymptomId });
+                    table.PrimaryKey("PK_SessionSymptoms", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SessionSymptoms_DiagnosticSessions_SessionId",
-                        column: x => x.SessionId,
+                        name: "FK_SessionSymptoms_DiagnosticSessions_DiagnosticSessionId",
+                        column: x => x.DiagnosticSessionId,
                         principalTable: "DiagnosticSessions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -265,8 +273,8 @@ namespace HealthGuard.Migrations
                 columns: new[] { "Id", "RoleName" },
                 values: new object[,]
                 {
-                    { 1, "ROLE_ADMIN" },
-                    { 2, "ROLE_USER" }
+                    { 1L, "ROLE_ADMIN" },
+                    { 2L, "ROLE_USER" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -309,6 +317,18 @@ namespace HealthGuard.Migrations
                 name: "IX_Patients_UserId",
                 table: "Patients",
                 column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Patients_UserId1",
+                table: "Patients",
+                column: "UserId1",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SessionSymptoms_DiagnosticSessionId_SymptomId",
+                table: "SessionSymptoms",
+                columns: new[] { "DiagnosticSessionId", "SymptomId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

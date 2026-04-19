@@ -1,66 +1,88 @@
-﻿using HealthGuard.Mappers;
+﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
-using HealthGuard.Models.Entities;
 using HealthGuard.Models.Entity;
-using HealthGuard.Repositories;
+using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic; // Bổ sung để dùng KeyNotFoundException
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
 {
     public class PatientFeedbackService
     {
-        private readonly IFeedbackRepository _feedbackRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly IDiagnosticSessionRepository _sessionRepository;
-        private readonly IFeedbackMapper _feedbackMapper;
+        private readonly HealthContext _context;
 
-        public PatientFeedbackService(
-            IFeedbackRepository feedbackRepository,
-            IUserRepository userRepository,
-            IDiagnosticSessionRepository sessionRepository,
-            IFeedbackMapper feedbackMapper)
+        public PatientFeedbackService(HealthContext context)
         {
-            _feedbackRepository = feedbackRepository;
-            _userRepository = userRepository;
-            _sessionRepository = sessionRepository;
-            _feedbackMapper = feedbackMapper;
+            _context = context;
         }
 
-        public async Task<FeedbackResponseDTO> SubmitFeedbackAsync(string username, FeedbackRequestDTO request)
+        public async Task<List<FeedbackResponseDto>> GetUserFeedbacksAsync(string username)
         {
-            // 1. Tìm user đang đăng nhập
-            var user = await _userRepository.FindByUsernameAsync(username);
+            return await _context.Feedbacks
+                .Include(f => f.DiagnosticSession)
+                .Where(f => f.User.Username == username)
+                .OrderByDescending(f => f.CreatedAt)
+                .Select(f => new FeedbackResponseDto
+                {
+                    Id = f.Id,
+                    Comments = f.Comments,
+                    CreatedAt = f.CreatedAt,
+                    SessionId = f.SessionId
+                })
+                .ToListAsync();
+        }
+
+        public async Task<FeedbackResponseDto> SubmitFeedbackAsync(string username, FeedbackRequestDto request)
+        {
+            // 1. Tìm user
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null)
             {
-                throw new Exception("Lỗi xác thực người dùng!");
+                throw new UnauthorizedAccessException("Lỗi xác thực người dùng!");
             }
 
-            // 2. Khởi tạo đối tượng Feedback mới
+            // 2. Tạo mới Feedback
             var feedback = new Feedback
             {
+                // ĐÃ FIX: Ép kiểu (int) đề phòng UserId trong Entity của ông đang là int
+                UserId = (int)user.Id,
                 User = user,
-                Comments = request.Comments
+                Comments = request.Comments,
+                CreatedAt = DateTime.UtcNow
             };
 
-            // 3. Nếu có gửi kèm sessionId, kiểm tra quyền sở hữu
-            // Giả sử request.SessionId là kiểu long? (nullable)
+            // 3. Xử lý SessionId
             if (request.SessionId.HasValue)
             {
-                var session = await _sessionRepository.FindByIdAndUserUsernameAsync(request.SessionId.Value, username);
+                // ĐÃ FIX: Lỗi không tìm thấy s.UserId -> Truy cập gián tiếp qua s.User.Id
+                var session = await _context.DiagnosticSessions
+                    .FirstOrDefaultAsync(s => s.Id == request.SessionId.Value && s.User.Id == user.Id);
+
                 if (session == null)
                 {
-                    throw new Exception("Phiên khám không tồn tại hoặc không thuộc về bạn!");
+                    throw new KeyNotFoundException("Phiên khám không tồn tại hoặc không thuộc về bạn!");
                 }
 
+                // ĐÃ FIX: Ép kiểu từ long xuống int để khớp với Entity của ông
+                feedback.SessionId = (int)session.Id;
                 feedback.DiagnosticSession = session;
             }
 
-            // 4. Lưu xuống Database
-            var savedFeedback = await _feedbackRepository.SaveAsync(feedback);
+            _context.Feedbacks.Add(feedback);
+            await _context.SaveChangesAsync();
 
-            return _feedbackMapper.ToDTO(savedFeedback);
+            // 4. Map DTO trả về
+            return new FeedbackResponseDto
+            {
+                Id = feedback.Id,
+                // ĐÃ FIX: Bỏ ?? 0 đi vì SessionId trong Entity là int (không bao giờ bị null)
+                SessionId = feedback.SessionId,
+                UserId = user.Id,
+                Username = user.Username,
+                Comments = feedback.Comments,
+                CreatedAt = feedback.CreatedAt
+            };
         }
     }
 }

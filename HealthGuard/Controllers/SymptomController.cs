@@ -1,5 +1,4 @@
 ﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateSymptomAsync([FromBody] SymptomDTO request)
+        public async Task<IActionResult> CreateSymptomAsync([FromBody] SymptomDto request)
         {
             var createdSymptom = await _symptomService.CreateSymptomAsync(request);
             // Bạn có thể trả về object vừa tạo kèm mã 201
@@ -45,7 +44,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSymptomAsync([FromRoute] long id, [FromBody] SymptomDTO request)
+        public async Task<IActionResult> UpdateSymptomAsync([FromRoute] long id, [FromBody] SymptomDto request)
         {
             var updatedSymptom = await _symptomService.UpdateSymptomAsync(id, request);
             return Ok(updatedSymptom);
@@ -59,7 +58,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost("weights")]
-        public async Task<IActionResult> AssignWeightAsync([FromBody] WeightRuleDTO rule)
+        public async Task<IActionResult> AssignWeightAsync([FromBody] WeightRuleDto rule)
         {
             await _symptomService.AssignWeightScoreAsync(rule);
             // Trả về chuỗi thông báo thành công

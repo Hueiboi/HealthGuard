@@ -1,14 +1,15 @@
 ﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
 using HealthGuard.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Controllers
 {
-    [ApiController]
-    [Route("api/auth")]
-    public class AuthController : ControllerBase
+    public class AuthController : Controller
     {
         private readonly AuthService _authService;
 
@@ -17,21 +18,114 @@ namespace HealthGuard.Controllers
             _authService = authService;
         }
 
-        // Endpoint: POST /api/auth/register
-        [HttpPost("register")]
-        public async Task<IActionResult> RegisterUserAsync([FromBody] RegisterRequestDTO request)
+        // ==========================================
+        // 1. TRANG ĐĂNG NHẬP (Lấy giao diện & Xử lý)
+        // ==========================================
+
+        // Mở giao diện Login
+        [HttpGet]
+        public IActionResult Login()
         {
-            var registeredUser = await _authService.RegisterAsync(request);
-            return StatusCode(201, registeredUser); // HttpStatus.CREATED
+            return View();
         }
 
-        // Endpoint: POST /api/auth/login
-        [HttpPost("login")]
-        public async Task<IActionResult> LoginUserAsync([FromBody] LoginRequestDTO request)
+        // Nhận dữ liệu khi bấm nút Đăng nhập
+        [HttpPost]
+        public async Task<IActionResult> Login([FromForm] LoginRequestDto request)
         {
-            var token = await _authService.LoginAsync(request);
-            // Trả về chuỗi Token dạng JSON thay vì chuỗi trần để Frontend dễ Parse
-            return Ok(new { token = token });
+            try
+            {
+                // 1. Service vẫn chạy và check mật khẩu, trả về JWT (mặc dù MVC mình không dùng trực tiếp JWT này để Auth)
+                var token = await _authService.LoginAsync(request);
+
+                // 2. TẠO THẺ COOKIE CHO MVC HIỂU
+                // (Thực tế ông có thể lấy Username/Email thẳng từ request để làm Claims)
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, request.Username),
+                    new Claim(ClaimTypes.NameIdentifier, request.Username), // Thêm dòng này cực kỳ quan trọng
+                    new Claim("jwt_token", token)
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true, 
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) 
+                };
+
+                // 3. ĐÓNG DẤU ĐĂNG NHẬP (Lưu Cookie xuống trình duyệt)
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                // 4. Vào trang chủ thôi!
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = ex.Message; // Lấy đúng câu chửi "Sai tài khoản, mật khẩu..." từ Service hiện ra
+                return View();
+            }
+        }
+
+        // ==========================================
+        // 2. TRANG ĐĂNG KÝ (Lấy giao diện & Xử lý)
+        // ==========================================
+
+        // Mở giao diện Đăng ký
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        // Nhận dữ liệu khi bấm nút Đăng ký
+        [HttpPost]
+        public async Task<IActionResult> Register([FromForm] RegisterRequestDto request)
+        {
+            // 1. Kiểm tra xem form có điền thiếu gì không
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(" | ", ModelState.Values
+                                    .SelectMany(v => v.Errors)
+                                    .Select(e => e.ErrorMessage));
+                ViewBag.Error = "Lỗi nhập liệu: " + errors;
+                return View(request);
+            }
+
+            try
+            {
+                // 2. Gọi service để lưu vào DB
+                await _authService.RegisterAsync(request);
+
+                // 3. Chuyển hướng sang trang Login sau khi thành công
+                // Nó sẽ tìm đến hàm [HttpGet] Login trong cùng Controller này
+                return RedirectToAction("Login");
+            }
+            catch (Exception ex)
+            {
+                // Móc cái lỗi thật sự (Inner Exception) ra
+                string realError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+
+                // Quăng nó ra màn hình
+                ViewBag.Error = "Lỗi Database: " + realError;
+                return View(request);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Logout()
+        {
+            // 1. Xé thẻ Cookie của MVC
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // 2. Xóa luôn cái token JWT lưu tạm (nếu có) cho sạch sẽ
+            Response.Cookies.Delete("JWT_TOKEN");
+
+            // 3. Đá về trang Login
+            return RedirectToAction("Login", "Auth");
         }
     }
 }

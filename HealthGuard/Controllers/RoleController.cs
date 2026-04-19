@@ -1,5 +1,4 @@
 ﻿using HealthGuard.Models.Dto;
-using HealthGuard.Models.DTOs;
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +19,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateRoleAsync([FromBody] RoleDTO request)
+        public async Task<IActionResult> CreateRoleAsync([FromBody] RoleDto request)
         {
             var createdRole = await _roleService.CreateRoleAsync(request);
             // HttpStatus.CREATED (201)
@@ -42,7 +41,7 @@ namespace HealthGuard.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRoleAsync([FromRoute] long id, [FromBody] RoleDTO request)
+        public async Task<IActionResult> UpdateRoleAsync([FromRoute] long id, [FromBody] RoleDto request)
         {
             var updatedRole = await _roleService.UpdateRoleAsync(id, request);
             return Ok(updatedRole);
