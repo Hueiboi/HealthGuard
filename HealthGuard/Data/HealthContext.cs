@@ -25,8 +25,7 @@ namespace HealthGuard.Data
             // 1. RÀNG BUỘC DUY NHẤT (UNIQUE)
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Username).IsUnique();
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.PhoneNumber).IsUnique();
+            modelBuilder.Entity<User>().HasIndex(u => u.PhoneNumber).IsUnique(false);
             modelBuilder.Entity<Disease>()
                 .HasIndex(d => d.DiseaseCode).IsUnique(); // Mã bệnh phải là duy nhất
 

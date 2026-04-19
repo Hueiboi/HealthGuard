@@ -9,12 +9,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ==============================================================
-// GIAI ĐOẠN 1: ĐĂNG KÝ SERVICES (Tất cả builder.Services ở đây)
-// ==============================================================
 builder.Services.AddControllersWithViews();
 
-// 1. Cấu hình Database
 builder.Services.AddDbContext<HealthContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -24,28 +20,32 @@ builder.Services.AddDbContext<HealthContext>(options =>
             mySqlOptions.CommandTimeout(120);
             mySqlOptions.EnableRetryOnFailure();
         }));
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Auth/Login"; // Nếu chưa đăng nhập, tự động đá về trang này
-        options.ExpireTimeSpan = TimeSpan.FromDays(7); // Giữ đăng nhập 7 ngày
-    });
 
-// 2. Đăng ký các Service (Chuyển từ dưới lên trên này)
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<DiagnosticService>();
 builder.Services.AddScoped<IJwtUtils, JwtUtils>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PatientProfileService>();
+builder.Services.AddScoped<PatientFeedbackService>();
 
-// 3. Cấu hình JWT Authentication
 var jwtSecret = "DayLaMotChuoiBaoMatCucKyDaiDeLamSecretKeyChoJWT1234567890";
 var key = Encoding.ASCII.GetBytes(jwtSecret);
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(options =>
+{
+    options.LoginPath = "/Auth/Login";
+    options.ExpireTimeSpan = TimeSpan.FromDays(7); 
+    options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true; 
+    options.Cookie.Name = "HealthGuard_Auth"; 
+    options.Cookie.SameSite = SameSiteMode.Lax; 
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 })
 .AddJwtBearer(options =>
 {
@@ -59,30 +59,10 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = false,
         ClockSkew = TimeSpan.Zero
     };
-
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            if (context.Request.Cookies.ContainsKey("JWT_TOKEN"))
-            {
-                context.Token = context.Request.Cookies["JWT_TOKEN"];
-            }
-            return Task.CompletedTask;
-        }
-    };
 });
 
-// ==============================================================
-// GIAI ĐOẠN 2: CHỐT ĐƠN (KHÔNG ĐƯỢC ADD SERVICE SAU DÒNG NÀY NỮA)
-// ==============================================================
 var app = builder.Build();
 
-// ==============================================================
-// GIAI ĐOẠN 3: CẤU HÌNH PIPELINE (Tất cả app.Use... ở đây)
-// ==============================================================
-
-// Seed Database
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<HealthContext>();
@@ -92,18 +72,19 @@ using (var scope = app.Services.CreateScope())
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    app.UseHsts(); 
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
+app.UseStaticFiles(); 
+
+app.UseRouting(); 
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

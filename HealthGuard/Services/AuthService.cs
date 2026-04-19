@@ -36,7 +36,7 @@ namespace HealthGuard.Services
             }
 
             var userRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "ROLE_USER")
-                           ?? throw new InvalidOperationException("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
+                            ?? throw new InvalidOperationException("Lỗi hệ thống: Không tìm thấy quyền ROLE_USER");
 
             // 3. Tạo User mới
             var newUser = new User
@@ -47,19 +47,17 @@ namespace HealthGuard.Services
                 IsActive = true,
                 Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 CreatedAt = DateTime.UtcNow,
-                PhoneNumber = "Chưa cập nhật"
             };
 
             _context.Users.Add(newUser);
 
-            // 4. Tạo Patient mới (ĐÃ FIX: Bỏ chữ Models.Entity đi để nó ăn theo namespace Entities ở trên cùng)
+            // 4. Tạo Patient mới
             var newPatient = new Patient
             {
                 User = newUser,
-                FullName = request.FullName,// Lấy tên thật từ Form đăng ký
-                Gender = "Khác",
-                MedicalHistory = "Chưa cập nhật"
-
+                FullName = request.FullName, // Lấy tên thật từ Form đăng ký
+                MedicalHistory = null
+                // ĐÃ XÓA `Gender = null` vì DB của ông không còn cột này nữa
             };
 
             _context.Patients.Add(newPatient);
@@ -82,8 +80,7 @@ namespace HealthGuard.Services
         {
             var user = await _context.Users
                 .Include(u => u.Role)
-                // ĐÃ FIX: Cho phép tìm kiếm bằng cả Username HOẶC Email
-                // Nếu DTO của ông đặt tên biến là EmailOrUsername thì sửa lại chữ request.Username thành request.EmailOrUsername nhé
+                // Tìm kiếm bằng cả Username HOẶC Email
                 .FirstOrDefaultAsync(u => u.Username == request.Username || u.Email == request.Username);
 
             if (user == null || !user.IsActive)

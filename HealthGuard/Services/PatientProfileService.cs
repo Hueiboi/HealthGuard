@@ -3,7 +3,6 @@ using HealthGuard.Models.Dto;
 using HealthGuard.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
@@ -12,54 +11,81 @@ namespace HealthGuard.Services
     {
         private readonly HealthContext _context;
 
-        // Tiêm HealthContext trực tiếp, dọn dẹp Repo và Mapper cũ
         public PatientProfileService(HealthContext context)
         {
             _context = context;
         }
 
+        // ==========================================
+        // 1. HÀM LẤY DỮ LIỆU TỪ DB LÊN GIAO DIỆN
+        // ==========================================
         public async Task<PatientProfileDto> GetMyProfileAsync(string username)
         {
-            // Sử dụng LINQ để tìm Patient dựa trên Username của bảng User liên kết
             var myProfile = await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.User.Username == username);
 
+            // NẾU CHƯA CÓ HỒ SƠ -> TỰ TẠO MỚI (Logic cũ tui giữ nguyên cho ông)
             if (myProfile == null)
             {
-                throw new KeyNotFoundException($"Không tìm thấy hồ sơ bệnh của người dùng: {username}");
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+                if (user == null) throw new Exception("Không tìm thấy tài khoản!");
+
+                myProfile = new Patient
+                {
+                    User = user,
+                    FullName = "Chưa cập nhật tên"
+                };
+
+                _context.Patients.Add(myProfile);
+                await _context.SaveChangesAsync();
             }
 
-            // Map thủ công sang DTO
+            // 👉 LỖI LÀ Ở ĐÂY LÚC TRƯỚC: Phải map ĐỦ TẤT CẢ các cột mới thêm vào DTO
             return new PatientProfileDto
             {
                 Id = myProfile.Id,
                 FullName = myProfile.FullName,
-                Email = myProfile.User.Email,
-                PhoneNumber = myProfile.User.PhoneNumber
+                Email = myProfile.User?.Email,
+                PhoneNumber = myProfile.User?.PhoneNumber,
+
+                // Mấy dòng này lúc trước bị thiếu nè:
+                DateOfBirth = myProfile.DateOfBirth,
+                EmergencyContact = myProfile.EmergencyContact,
+                MedicalHistory = myProfile.MedicalHistory,
+                Height = myProfile.Height,
+                Weight = myProfile.Weight
             };
         }
 
-        public async Task<PatientProfileDto> UpdateProfileAsync(PatientProfileDto request, string username)
+        // ==========================================
+        // 2. HÀM NHẬN DỮ LIỆU TỪ GIAO DIỆN LƯU XUỐNG DB
+        // ==========================================
+        public async Task UpdateProfileAsync(PatientProfileDto request, string username)
         {
-            var existingPatient = await _context.Patients
+            var patient = await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.User.Username == username);
 
-            if (existingPatient == null) throw new KeyNotFoundException("Không tìm thấy hồ sơ");
+            if (patient == null) throw new Exception("Không tìm thấy hồ sơ!");
 
-            // Cập nhật thông tin
-            existingPatient.FullName = request.FullName;
-            existingPatient.User.PhoneNumber = request.PhoneNumber;
+            // 👉 GÁN TẤT CẢ DỮ LIỆU (Bỏ luôn mấy cái điều kiện if>0 cho nó lưu sảng khoái)
+            patient.FullName = request.FullName;
+            patient.DateOfBirth = request.DateOfBirth;
+            patient.EmergencyContact = request.EmergencyContact;
+            patient.MedicalHistory = request.MedicalHistory;
+            patient.Height = request.Height;
+            patient.Weight = request.Weight;
 
-            // 👉 LƯU THÊM CÁC THÔNG TIN Y TẾ MỚI TỪ FORM
-            existingPatient.Height = request.Height;
-            existingPatient.Weight = request.Weight;
-            existingPatient.MedicalHistory = request.MedicalHistory;
-            // existingPatient.DateOfBirth = ... (Tuỳ DB của ông)
+            // Gán số điện thoại (Bảng User)
+            if (patient.User != null && !string.IsNullOrEmpty(request.PhoneNumber))
+            {
+                patient.User.PhoneNumber = request.PhoneNumber;
+            }
 
+            // Cập nhật và lưu
+            _context.Patients.Update(patient);
             await _context.SaveChangesAsync();
-            return request;
         }
     }
 }

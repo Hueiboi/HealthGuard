@@ -22,7 +22,7 @@ namespace HealthGuard.Models.Entity
         public string Password { get; set; } // Đổi PasswordHash -> Password cho khớp với code AuthService ban nãy
 
         [MaxLength(15)]
-        public string PhoneNumber { get; set; } // Để không Required vì lúc Register mình chưa bắt nhập số điện thoại
+        public string? PhoneNumber { get; set; } // Để không Required vì lúc Register mình chưa bắt nhập số điện thoại
 
         public bool IsActive { get; set; } // THIẾU: CustomUserDetailService cần trường này để check user bị khóa chưa
 

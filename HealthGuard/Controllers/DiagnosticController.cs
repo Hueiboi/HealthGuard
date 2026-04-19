@@ -1,23 +1,25 @@
 ﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
+using HealthGuard.Models.Entity;
 using HealthGuard.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization; // Nhớ thêm using này
 
 namespace HealthGuard.Controllers
 {
-    [Authorize] 
+    [Authorize]
     public class DiagnosticController : Controller
     {
         private readonly DiagnosticService _diagnosticService;
-        private readonly HealthContext _context; // Khai báo Context để gọi DB
+        private readonly HealthContext _context;
 
         public DiagnosticController(DiagnosticService diagnosticService, HealthContext context)
         {
@@ -25,94 +27,132 @@ namespace HealthGuard.Controllers
             _context = context;
         }
 
-        // ==========================================
-        // 1. ACTION TRẢ VỀ GIAO DIỆN (VIEW)
-        // ==========================================
+        [HttpGet]
+        public IActionResult Index() => View();
 
         [HttpGet]
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Details() => View();
 
         [HttpGet]
-        public IActionResult Details()
-        {
-            return View();
-        }
+        public IActionResult Review() => View();
 
         [HttpGet]
-        public IActionResult Review()
+        public async Task<IActionResult> History()
         {
-            return View();
-        }
+            string username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
-        // ==========================================
-        // 2. CÁC API TRẢ VỀ VÀ XỬ LÝ DỮ LIỆU (JSON)
-        // ==========================================
-
-        // Lấy danh sách triệu chứng TỪ DATABASE
-        [HttpGet("api/patient/diagnose/symptoms")]
-        // [Authorize] // Bật lên sau khi test xong
-        public async Task<IActionResult> SelectSymptoms()
-        {
-            // Truy vấn trực tiếp từ bảng Symptoms dưới MySQL
-            var symptoms = await _context.Symptoms
-                .Select(s => new SymptomDto
-                {
-                    Id = s.Id,
-                    SymptomName = s.SymptomName
-                })
+            var historyData = await _context.DiagnosticSessions
+                .Include(s => s.User)
+                .Include(s => s.DiagnosisResults)
+                    .ThenInclude(dr => dr.Disease)
+                .Where(s => s.User.Username == username)
+                .OrderByDescending(s => s.CreatedAt)
                 .ToListAsync();
 
+            return View(historyData);
+        }
+
+        [HttpGet("api/patient/diagnose/symptoms")]
+        public async Task<IActionResult> SelectSymptoms()
+        {
+            var symptoms = await _context.Symptoms
+                .Select(s => new SymptomDto { Id = s.Id, SymptomName = s.SymptomName })
+                .ToListAsync();
             return Ok(symptoms);
         }
 
-        // Đẩy ID triệu chứng sang Python và nhận kết quả
         [HttpPost("api/patient/diagnose")]
-        // [Authorize]
         public async Task<IActionResult> RunDiagnosisAsync(
              [FromBody] DiagnosticRequestDto request,
              [FromServices] IHttpClientFactory httpClientFactory)
         {
             if (request == null || request.SelectedSymptoms == null || request.SelectedSymptoms.Count == 0)
-            {
                 return BadRequest(new { message = "Vui lòng cung cấp ít nhất một triệu chứng." });
-            }
 
             try
             {
-                var pythonPayload = new
-                {
-                    selectedSymptoms = request.SelectedSymptoms.Select(s => new { symptomId = s.SymptomId }).ToList()
-                };
+                // 1. GỬI DATA SANG PYTHON
+                var pythonPayload = new { selectedSymptoms = request.SelectedSymptoms.Select(s => new { symptomId = s.SymptomId }).ToList() };
+                var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(pythonPayload, jsonOptions), Encoding.UTF8, "application/json");
 
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                };
-
-                var jsonContent = new StringContent(
-                    JsonSerializer.Serialize(pythonPayload, jsonOptions),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                // 2. GỌI SANG SERVER PYTHON 
                 var client = httpClientFactory.CreateClient();
                 var response = await client.PostAsync("http://127.0.0.1:5000/predict", jsonContent);
 
                 if (!response.IsSuccessStatusCode)
-                {
                     return StatusCode(500, new { message = "Lỗi khi gọi mô hình AI Python." });
-                }
 
-                // 3. ĐỌC KẾT QUẢ TỪ PYTHON
+                // 2. ĐỌC KẾT QUẢ TỪ PYTHON
                 var pythonResultString = await response.Content.ReadAsStringAsync();
 
-                // 4. TRẢ THẲNG CHO FRONTEND
-                // Vì Python đã trả về format JSON chuẩn { "status": "Success", "diagnoses": [...] } 
-                // C# chỉ việc đẩy thẳng cục này cho trang Review.cshtml render ra màn hình.
+                // 3. LƯU LỊCH SỬ NGẦM (Bọc Try/Catch để KHÔNG BAO GIỜ LÀM CHẾT GIAO DIỆN)
+                // ===================================================================
+                // 3. LƯU LỊCH SỬ NGẦM (LƯU TỪNG BƯỚC ĐỂ TRÁNH LỖI "FAILED TO READ RESULT SET")
+                // ===================================================================
+                try
+                {
+                    var pythonData = JsonSerializer.Deserialize<PythonAiResponse>(pythonResultString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    string username = User.Identity?.Name;
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+
+                    if (user != null && pythonData?.Diagnoses != null && pythonData.Diagnoses.Count > 0)
+                    {
+                        // BƯỚC 1: LƯU PHIÊN KHÁM NGAY LẬP TỨC ĐỂ LẤY ID
+                        var newSession = new DiagnosticSession { User = user, Status = "Hoàn tất", CreatedAt = DateTime.Now };
+                        _context.DiagnosticSessions.Add(newSession);
+                        await _context.SaveChangesAsync(); // <--- Lưu phát 1 (Chắc chắn có SessionId)
+
+                        var aiResults = new List<DiagnosisResult>();
+
+                        foreach (var diag in pythonData.Diagnoses)
+                        {
+                            if (string.IsNullOrEmpty(diag.DiseaseName)) continue;
+
+                            var disease = await _context.Diseases.FirstOrDefaultAsync(d => d.DiseaseName == diag.DiseaseName);
+
+                            if (disease == null)
+                            {
+                                string generatedCode = "AI-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
+                                disease = new Disease
+                                {
+                                    DiseaseCode = generatedCode,
+                                    DiseaseName = diag.DiseaseName,
+                                    // Cắt bớt chuỗi nếu Python trả về quá dài (phòng hờ lỗi tràn cột DB)
+                                    Description = string.IsNullOrEmpty(diag.Description) ? "Đang cập nhật" :
+                                                  (diag.Description.Length > 490 ? diag.Description.Substring(0, 490) + "..." : diag.Description),
+                                    TreatmentAdvice = string.IsNullOrEmpty(diag.Treatment) ? "Đang cập nhật" :
+                                                  (diag.Treatment.Length > 490 ? diag.Treatment.Substring(0, 490) + "..." : diag.Treatment)
+                                };
+
+                                _context.Diseases.Add(disease);
+                                // BƯỚC 2: LƯU BỆNH MỚI NGAY LẬP TỨC ĐỂ LẤY ID
+                                await _context.SaveChangesAsync(); // <--- Lưu phát 2 (Chắc chắn có DiseaseId)
+                            }
+
+                            // BƯỚC 3: LẮP RÁP KẾT QUẢ KHI ĐÃ CÓ ĐỦ ID CỦA CHA VÀ CON
+                            aiResults.Add(new DiagnosisResult
+                            {
+                                SessionId = newSession.Id, // Dùng thẳng ID cho chắc ăn
+                                DiseaseId = disease.Id,              // Dùng thẳng ID cho chắc ăn
+                                ProbabilityPercentage = diag.Probability
+                            });
+                        }
+
+                        // BƯỚC 4: LƯU KẾT QUẢ CUỐI CÙNG
+                        if (aiResults.Count > 0)
+                        {
+                            _context.DiagnosisResults.AddRange(aiResults);
+                            await _context.SaveChangesAsync(); // <--- Lưu phát 3 (Thành công 100%)
+                        }
+                    }
+                }
+                catch (Exception dbEx)
+                {
+                    Console.WriteLine("\n🔥 LỖI LƯU DB: " + dbEx.Message + (dbEx.InnerException != null ? " ---> " + dbEx.InnerException.Message : "") + "\n");
+                }
+
+                // 4. TRẢ KẾT QUẢ CHO FRONTEND
                 return Content(pythonResultString, "application/json");
             }
             catch (Exception ex)
@@ -120,5 +160,18 @@ namespace HealthGuard.Controllers
                 return StatusCode(500, new { message = "Lỗi kết nối AI Server: " + ex.Message });
             }
         }
+    }
+    public class PythonAiResponse
+    {
+        public string Status { get; set; }
+        public List<PythonDiagnosis> Diagnoses { get; set; }
+    }
+
+    public class PythonDiagnosis
+    {
+        public string DiseaseName { get; set; }
+        public double Probability { get; set; }
+        public string Description { get; set; }
+        public string Treatment { get; set; }
     }
 }

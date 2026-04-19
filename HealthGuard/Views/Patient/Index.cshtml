@@ -10,8 +10,9 @@
 
     // Logic xác định trạng thái BMI
     string bmiStatus = "Bình thường";
-    if (bmiValue < 18.5) bmiStatus = "Gầy";
+    if (bmiValue > 0 && bmiValue < 18.5) bmiStatus = "Gầy";
     else if (bmiValue >= 25) bmiStatus = "Thừa cân (Overweight)";
+    else if (bmiValue == 0) bmiStatus = "Chưa có dữ liệu";
 }
 
 <!DOCTYPE html>
@@ -24,7 +25,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
-        /* Toàn bộ phần CSS giữ nguyên 100% như cũ của ông */
+        /* TOÀN BỘ CSS CỦA ÔNG GIỮ NGUYÊN 100% */
         :root {
             --primary-blue: #0d47a1;
             --bg-color: #f8fafc;
@@ -40,43 +41,6 @@
             padding-bottom: 50px;
         }
 
-        .top-nav {
-            background: white;
-            padding: 15px 40px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .nav-brand {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--primary-blue);
-            text-decoration: none;
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            color: var(--text-muted);
-            font-size: 1.2rem;
-        }
-
-        .avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: #334155;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
 
         .page-header {
             display: flex;
@@ -203,6 +167,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 8px;
+            display: block;
         }
 
         .form-control-custom {
@@ -302,6 +267,15 @@
             border: 1px solid #e0e7ff;
         }
 
+        .complete-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+
         .progress-custom {
             height: 8px;
             border-radius: 4px;
@@ -319,12 +293,49 @@
 </head>
 <body>
 
-    <nav class="top-nav">
-        <a asp-controller="Home" asp-action="Index" class="nav-brand">Guardian Portal</a>
-        <div class="nav-actions">
-            <i class="bi bi-bell"></i>
-            <i class="bi bi-gear"></i>
-            <div class="avatar">@(Model.FullName?.Substring(0, 1).ToUpper() ?? "U")</div>
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-bottom: 1px solid #e2e8f0; margin-bottom: 30px;">
+
+        <a asp-controller="Home" asp-action="Index" style="font-size: 1.6rem; font-weight: 800; color: #2563eb; text-decoration: none; letter-spacing: -0.5px;">
+            HealthGuard
+        </a>
+
+        
+
+        <div style="display: flex; align-items: center; gap: 20px;">
+
+            
+
+            <i class="bi bi-bell" style="font-size: 1.2rem; color: #64748b; cursor: pointer;"></i>
+
+            @if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <div class="dropdown">
+                    <div class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; border-radius: 50%; background-color: #20c997; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none;">
+                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                    </div>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
+                        <li class="px-3 py-2 border-bottom mb-1">
+                            <p class="mb-0 fw-bold text-dark">@User.Identity.Name</p>
+                            <small class="text-muted">Bệnh nhân</small>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" asp-controller="Patient" asp-action="Index">
+                                <i class="bi bi-person me-2"></i>Hồ sơ cá nhân
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout">
+                                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #94a3b8; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
+            }
         </div>
     </nav>
 
@@ -363,23 +374,23 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label-custom" asp-for="FullName">HỌ VÀ TÊN</label>
-                                <input asp-for="FullName" class="form-control-custom" placeholder="Nhập họ tên">
+                                <input type="text" asp-for="FullName" class="form-control-custom" placeholder="Nhập họ tên">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom" asp-for="DateOfBirth">NGÀY SINH</label>
-                                <input asp-for="DateOfBirth" class="form-control-custom">
+                                <input type="date" asp-for="DateOfBirth" class="form-control-custom">
                             </div>
                             <div class="col-12">
                                 <label class="form-label-custom" asp-for="Email">ĐỊA CHỈ EMAIL</label>
-                                <input asp-for="Email" class="form-control-custom" readonly>
+                                <input type="email" asp-for="Email" class="form-control-custom" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom" asp-for="PhoneNumber">SỐ ĐIỆN THOẠI</label>
-                                <input asp-for="PhoneNumber" class="form-control-custom">
+                                <input type="tel" asp-for="PhoneNumber" class="form-control-custom">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom" asp-for="EmergencyContact">LIÊN HỆ KHẨN CẤP</label>
-                                <input asp-for="EmergencyContact" class="form-control-custom">
+                                <input type="tel" asp-for="EmergencyContact" class="form-control-custom">
                             </div>
                         </div>
                     </div>
@@ -407,15 +418,15 @@
                         <div class="d-flex gap-5 mb-2">
                             <div>
                                 <label class="form-label-custom" asp-for="Height">CHIỀU CAO (CM)</label>
-                                <div class="bio-input-group">
-                                    <input asp-for="Height" class="form-control-custom">
-                                    <span class="bio-unit">cm</span>
-                                </div>
+                                <div class="bio-input-group" style="display: flex; flex-wrap: nowrap; align-items: center; gap: 10px;">
+    <input type="number" step="0.1" asp-for="Height" class="form-control-custom" style="width: 90px;">
+    <span class="bio-unit">cm</span>
+</div>
                             </div>
                             <div>
                                 <label class="form-label-custom" asp-for="Weight">CÂN NẶNG (KG)</label>
-                                <div class="bio-input-group">
-                                    <input asp-for="Weight" class="form-control-custom">
+                                <div class="bio-input-group" style="display: flex; flex-wrap: nowrap; align-items: center; gap: 10px;">
+                                    <input type="number" step="0.1" asp-for="Weight" class="form-control-custom" style="width: 90px;">
                                     <span class="bio-unit">kg</span>
                                 </div>
                             </div>
@@ -447,5 +458,6 @@
             </div>
         </div>
     </form>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

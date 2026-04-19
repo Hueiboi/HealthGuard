@@ -17,6 +17,22 @@ namespace HealthGuard.Services
             _context = context;
         }
 
+        public async Task<List<FeedbackResponseDto>> GetUserFeedbacksAsync(string username)
+        {
+            return await _context.Feedbacks
+                .Include(f => f.DiagnosticSession)
+                .Where(f => f.User.Username == username)
+                .OrderByDescending(f => f.CreatedAt)
+                .Select(f => new FeedbackResponseDto
+                {
+                    Id = f.Id,
+                    Comments = f.Comments,
+                    CreatedAt = f.CreatedAt,
+                    SessionId = f.SessionId
+                })
+                .ToListAsync();
+        }
+
         public async Task<FeedbackResponseDto> SubmitFeedbackAsync(string username, FeedbackRequestDto request)
         {
             // 1. Tìm user

@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
-        /* CSS giữ nguyên 100% như file cũ của ông */
+        /* CSS GIỮ NGUYÊN 100% CỦA ÔNG */
         :root {
             --primary-color: #2563eb;
             --bg-color: #f8fafc;
@@ -46,22 +46,6 @@
             color: var(--primary-color);
             padding: 0 24px 30px;
             text-decoration: none;
-        }
-
-        .user-profile-sm {
-            padding: 0 24px 30px;
-        }
-
-        .user-name {
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 0;
-        }
-
-        .user-id {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin: 0;
         }
 
         .nav-menu {
@@ -415,43 +399,17 @@
 
     <aside class="sidebar">
         <a asp-controller="Home" asp-action="Index" class="brand-logo">HealthGuard</a>
-
-        <div class="user-profile-sm">
-            @if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                <h3 class="user-name">@User.Identity.Name</h3>
-                <p class="user-id">Patient ID: #8821</p>
-            }
-            else
-            {
-                <h3 class="user-name">Guest</h3>
-                <p class="user-id">Chưa đăng nhập</p>
-            }
-        </div>
-
         <ul class="nav-menu">
+            <li class="nav-item"><a asp-controller="Home" asp-action="Index" class="nav-link active"><i class="bi bi-grid-1x2"></i> Tổng quan</a></li>
+            <li class="nav-item"><a asp-controller="Patient" asp-action="Index" class="nav-link"><i class="bi bi-file-earmark-medical"></i> Hồ sơ y tế</a></li>
+            <li class="nav-item"><a asp-controller="Diagnostic" asp-action="Index" class="nav-link"><i class="bi bi-cpu"></i> Chẩn đoán AI</a></li>
             <li class="nav-item">
-                <a asp-controller="Home" asp-action="Index" class="nav-link active">
-                    <i class="bi bi-grid-1x2"></i> Tổng quan
+                <a asp-controller="PatientFeedback" asp-action="Messages" class="nav-link">
+                    <i class="bi bi-chat-left-text"></i> Tin nhắn
                 </a>
             </li>
-            <li class="nav-item">
-                <a asp-controller="Patient" asp-action="Index" class="nav-link">
-                    <i class="bi bi-file-earmark-medical"></i> Hồ sơ y tế
-                </a>
-            </li>
-            <li class="nav-item">
-                <a asp-controller="Diagnostic" asp-action="Index" class="nav-link">
-                    <i class="bi bi-cpu"></i> Chẩn đoán AI
-                </a>
-            </li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-heart-pulse"></i> Kế hoạch chăm sóc</a></li>
-            <li class="nav-item"><a href="#" class="nav-link"><i class="bi bi-chat-dots"></i> Tin nhắn</a></li>
         </ul>
-
-        <div class="sidebar-footer">
-            <button class="btn-health-tips">View Health Tips</button>
-        </div>
+        <div class="sidebar-footer"><button class="btn-health-tips">View Health Tips</button></div>
     </aside>
 
     <main class="main-content">
@@ -466,29 +424,51 @@
                 </a>
                 <i class="bi bi-bell icon-btn"></i>
 
-                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                @if (ViewBag.IsGuest == false)
                 {
-                    <div class="avatar-top" title="@User.Identity.Name">
-                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                    <div class="dropdown">
+                        <div class="avatar-top dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer; user-select: none;">
+                            @(ViewBag.UserName?.Substring(0, 1).ToUpper() ?? "U")
+                        </div>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
+                            <li class="px-3 py-2 border-bottom mb-1">
+                                <p class="mb-0 fw-bold text-dark">@ViewBag.UserName</p>
+                                <small class="text-muted">Bệnh nhân</small>
+                            </li>
+                            <li><a class="dropdown-item py-2" asp-controller="Patient" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
+                            <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
+                        </ul>
                     </div>
                 }
                 else
                 {
-                    <i class="bi bi-person-circle fs-3 icon-btn" style="color: #94a3b8;" title="Guest"></i>
+                    <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-primary btn-sm fw-bold" style="border-radius: 20px; padding: 6px 20px;">Đăng nhập</a>
                 }
             </div>
         </header>
 
         <div class="dashboard-body">
-            @if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                <h1 class="welcome-title">Chào @User.Identity.Name!</h1>
-            }
-            else
+            @if (ViewBag.IsGuest == true)
             {
                 <h1 class="welcome-title">Chào Khách!</h1>
             }
+            else
+            {
+                <h1 class="welcome-title">Chào @ViewBag.UserName!</h1>
+            }
             <p class="welcome-subtitle">Hôm nay bạn cảm thấy thế nào? Cùng kiểm tra các chỉ số sức khỏe của mình nhé.</p>
+
+            @if (ViewBag.IsGuest == true)
+            {
+                <div class="alert alert-info d-flex align-items-center mb-4" style="border-radius: 16px; background-color: #eff6ff; border: 1px solid #bfdbfe;">
+                    <i class="bi bi-info-circle-fill fs-3 text-primary me-3"></i>
+                    <div>
+                        <strong class="text-dark">Bạn đang truy cập dưới quyền khách</strong><br>
+                        <span class="text-muted" style="font-size: 0.9rem;">Tính năng Chẩn đoán AI có sẵn để trải nghiệm. Để lưu lịch sử và theo dõi chỉ số sức khỏe, vui lòng <a asp-controller="Auth" asp-action="Login" class="fw-bold text-decoration-none">Đăng nhập</a>.</span>
+                    </div>
+                </div>
+            }
 
             <div class="row g-4 mb-4">
                 <div class="col-md-5">
@@ -502,7 +482,7 @@
                         <i class="bi bi-chevron-right"></i>
                     </a>
 
-                    <a href="#" class="action-card">
+                    <a asp-controller="Diagnostic" asp-action="History" class="action-card">
                         <div class="d-flex align-items-center">
                             <div class="action-card-icon"><i class="bi bi-clock-history"></i></div>
                             <span>Xem lịch sử khám</span>
@@ -519,17 +499,17 @@
                     </a>
                 </div>
 
-                <div class="col-md-7">
+                <div class="col-md-7 d-flex flex-column">
                     <div class="section-title">Hoạt động gần đây</div>
 
                     @if (ViewBag.HasRecentDiagnosis == true)
                     {
-                        <div class="recent-card position-relative overflow-hidden">
+                        <div class="recent-card position-relative overflow-hidden flex-grow-1">
                             <i class="bi bi-clipboard2-pulse position-absolute" style="font-size: 8rem; color: #f8fafc; right: -20px; top: -20px; z-index: 0;"></i>
                             <div class="position-relative" style="z-index: 1;">
                                 <span class="badge-success"><i class="bi bi-check-circle me-1"></i> KẾT QUẢ MỚI NHẤT</span>
-                                <h3 class="recent-title">Chẩn đoán tổng quát từ AI</h3>
-                                <p class="recent-desc">Hệ thống đã ghi nhận các triệu chứng của bạn và thực hiện phân tích bằng mô hình Logistic Regression.</p>
+                                <h3 class="recent-title">@ViewBag.TopDiseaseName</h3>
+                                <p class="recent-desc">Hệ thống đã ghi nhận các triệu chứng của bạn và thực hiện phân tích bằng AI.</p>
 
                                 <div class="d-flex gap-5 mb-3">
                                     <div>
@@ -541,16 +521,23 @@
                                         <div style="font-weight: 700; color: var(--primary-color);">@ViewBag.DiagnosisScore</div>
                                     </div>
                                 </div>
-                                <a href="#" class="text-decoration-none fw-bold" style="color: var(--primary-color); font-size: 0.9rem;">Xem báo cáo chi tiết <i class="bi bi-arrow-right"></i></a>
+                                <a asp-controller="Diagnostic" asp-action="History" class="text-decoration-none fw-bold" style="color: var(--primary-color); font-size: 0.9rem;">Xem báo cáo chi tiết <i class="bi bi-arrow-right"></i></a>
                             </div>
                         </div>
                     }
                     else
                     {
-                        <div class="text-center d-flex flex-column justify-content-center align-items-center" style="background: white; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 40px 20px; height: 100%; min-height: 250px;">
+                        <div class="text-center d-flex flex-column justify-content-center align-items-center flex-grow-1" style="background: white; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 40px 20px; min-height: 250px;">
                             <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
                             <h4 class="mt-3 text-dark fw-bold" style="font-size: 1.1rem;">Chưa có lịch sử chẩn đoán</h4>
-                            <p class="text-muted mb-3" style="font-size: 0.9rem;">Hãy cung cấp triệu chứng và sử dụng AI Diagnosis Wizard để đánh giá tình trạng của bạn.</p>
+                            @if (ViewBag.IsGuest == true)
+                            {
+                                <p class="text-muted mb-3" style="font-size: 0.9rem;">Vui lòng đăng nhập để hệ thống có thể lưu trữ kết quả chẩn đoán của bạn.</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-3" style="font-size: 0.9rem;">Hãy cung cấp triệu chứng và sử dụng AI Diagnosis Wizard để đánh giá tình trạng của bạn.</p>
+                            }
                         </div>
                     }
                 </div>
@@ -577,7 +564,7 @@
                                 <span class="metric-trend text-muted">Ổn định</span>
                             </div>
                             <div class="metric-title">Chỉ số BMI</div>
-                            <div class="metric-value">22.4 <span class="metric-unit">Bình thường</span></div>
+                            <div class="metric-value">@ViewBag.BMI <span class="metric-unit">@ViewBag.BMIStatus</span></div>
                         </div>
                     </div>
 
@@ -609,11 +596,21 @@
                 <div class="text-center" style="background: white; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 40px 20px;">
                     <i class="bi bi-folder-x text-muted" style="font-size: 3.5rem;"></i>
                     <h4 class="mt-3 text-dark fw-bold" style="font-size: 1.2rem;">Chưa có dữ liệu sức khỏe</h4>
-                    <p class="text-muted mb-4" style="font-size: 0.95rem;">Bạn cần cập nhật hồ sơ y tế chiều cao, cân nặng để hệ thống có thể theo dõi và phân tích các chỉ số.</p>
 
-                    <a asp-controller="Patient" asp-action="Index" style="background-color: var(--primary-color); color: white; padding: 10px 24px; border-radius: 20px; text-decoration: none; font-weight: 600;">
-                        <i class="bi bi-pencil-square me-2"></i>Cập nhật hồ sơ ngay
-                    </a>
+                    @if (ViewBag.IsGuest == true)
+                    {
+                        <p class="text-muted mb-4" style="font-size: 0.95rem;">Bạn cần đăng nhập để cập nhật chiều cao, cân nặng và cho phép hệ thống theo dõi BMI.</p>
+                        <a asp-controller="Auth" asp-action="Login" style="background-color: var(--primary-color); color: white; padding: 10px 24px; border-radius: 20px; text-decoration: none; font-weight: 600;">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập ngay
+                        </a>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-4" style="font-size: 0.95rem;">Bạn cần cập nhật hồ sơ y tế chiều cao, cân nặng để hệ thống có thể theo dõi và phân tích các chỉ số.</p>
+                        <a asp-controller="Patient" asp-action="Index" style="background-color: var(--primary-color); color: white; padding: 10px 24px; border-radius: 20px; text-decoration: none; font-weight: 600;">
+                            <i class="bi bi-pencil-square me-2"></i>Cập nhật hồ sơ ngay
+                        </a>
+                    }
                 </div>
             }
 
@@ -632,6 +629,6 @@
 
         </div>
     </main>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

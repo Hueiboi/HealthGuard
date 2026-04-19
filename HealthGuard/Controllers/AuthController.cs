@@ -42,16 +42,23 @@ namespace HealthGuard.Controllers
                 // (Thực tế ông có thể lấy Username/Email thẳng từ request để làm Claims)
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, request.Username), // Lấy tên hiển thị ra màn hình
-                    new Claim("jwt_token", token) // Cất cái token này vào Cookie, sau này thích thì lôi ra xài
+                    new Claim(ClaimTypes.Name, request.Username),
+                    new Claim(ClaimTypes.NameIdentifier, request.Username), // Thêm dòng này cực kỳ quan trọng
+                    new Claim("jwt_token", token)
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true, 
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) 
+                };
 
                 // 3. ĐÓNG DẤU ĐĂNG NHẬP (Lưu Cookie xuống trình duyệt)
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity));
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
 
                 // 4. Vào trang chủ thôi!
                 return RedirectToAction("Index", "Home");
@@ -106,6 +113,19 @@ namespace HealthGuard.Controllers
                 ViewBag.Error = "Lỗi Database: " + realError;
                 return View(request);
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Logout()
+        {
+            // 1. Xé thẻ Cookie của MVC
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // 2. Xóa luôn cái token JWT lưu tạm (nếu có) cho sạch sẽ
+            Response.Cookies.Delete("JWT_TOKEN");
+
+            // 3. Đá về trang Login
+            return RedirectToAction("Login", "Auth");
         }
     }
 }

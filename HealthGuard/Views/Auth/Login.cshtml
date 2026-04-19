@@ -12,6 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
+        /* CSS GIỮ NGUYÊN 100% */
         body {
             background-color: #f8fafc;
             font-family: 'Segoe UI', sans-serif;
@@ -105,6 +106,7 @@
             font-weight: 600;
             transition: 0.2s;
             margin-bottom: 25px;
+            cursor: pointer;
         }
 
             .btn-primary-custom:hover {
@@ -172,6 +174,23 @@
                 font-weight: 700;
                 text-decoration: none;
             }
+
+        .guest-link {
+            color: #64748b;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            text-decoration: none;
+            transition: 0.2s;
+            font-size: 0.85rem;
+        }
+
+            .guest-link:hover {
+                color: #0d47a1;
+            }
     </style>
 </head>
 <body>
@@ -179,40 +198,45 @@
     <div class="login-wrapper">
         <div class="login-card">
             <div class="shield-icon"><i class="bi bi-shield-plus"></i></div>
-            <h1 class="welcome-title">Welcome Back</h1>
-            <p class="welcome-subtitle">Sign in to your Guardian Portal account.</p>
+            <h1 class="welcome-title">Chào mừng trở lại</h1>
+            <p class="welcome-subtitle">Đăng nhập vào tài khoản HealthGuard của bạn.</p>
 
             @if (ViewBag.Error != null)
             {
-                <div class="alert alert-danger" style="border-radius: 12px; font-size: 0.85rem; padding: 10px;">@ViewBag.Error</div>
+                <div class="alert alert-danger" style="border-radius: 12px; font-size: 0.85rem; padding: 10px;">
+                    <i class="bi bi-exclamation-circle me-2"></i>@ViewBag.Error
+                </div>
             }
 
-            <form method="post" action="/Auth/Login">
-                <div class="text-start" style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 8px;">USERNAME OR EMAIL</div>
+            <form asp-controller="Auth" asp-action="Login" method="post">
+                <div class="text-start" style="font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 8px;">TÊN ĐĂNG NHẬP HOẶC EMAIL</div>
+
                 <div class="input-group-custom">
                     <i class="bi bi-person"></i>
-                    <input type="text" name="username" class="form-control-custom" placeholder="Enter your username or email" required>
+                    <input type="text" name="username" class="form-control-custom" placeholder="Nhập tên đăng nhập hoặc email" required>
                 </div>
 
                 <div class="input-group-custom">
                     <i class="bi bi-lock"></i>
-                    <input type="password" name="password" class="form-control-custom" placeholder="Enter your password" required>
+                    <input type="password" name="password" class="form-control-custom" placeholder="Nhập mật khẩu của bạn" required>
                 </div>
 
-                <button type="submit" class="btn-primary-custom">Sign In</button>
+                <button type="submit" class="btn-primary-custom">Đăng nhập</button>
             </form>
 
-            <div class="divider">Or continue with</div>
+            <div class="divider">Hoặc tiếp tục với</div>
 
             <button class="btn-google">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
-                Sign in with Google
+                Đăng nhập bằng Google
             </button>
 
             <div class="register-link">
-                Don't have an account? <a href="/Auth/Register">Đăng ký ngay</a>
-                <a href="/Home/Index" style="color: #64748b; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="bi bi-person-bounding-box"></i> Continue as Guest
+                Chưa có tài khoản?
+                <a asp-controller="Auth" asp-action="Register">Đăng ký ngay</a>
+
+                <a asp-controller="Home" asp-action="Index" class="guest-link">
+                    <i class="bi bi-person-bounding-box"></i> Truy cập ẩn danh
                 </a>
             </div>
         </div>

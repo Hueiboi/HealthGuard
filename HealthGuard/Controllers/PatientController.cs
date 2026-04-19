@@ -3,6 +3,7 @@ using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Controllers
@@ -23,17 +24,20 @@ namespace HealthGuard.Controllers
         {
             try
             {
-                string currentUsername = User.Identity.Name;
-                var profile = await _patientProfileService.GetMyProfileAsync(currentUsername);
+                string currentUsername = User.FindFirstValue(ClaimTypes.Name);
 
-                // Trả về file Views/Patient/Index.cshtml kèm dữ liệu
+                if (string.IsNullOrEmpty(currentUsername))
+                {
+                    // Nếu vẫn null thì có thể là do chưa Login hoặc Cookie hết hạn
+                    return RedirectToAction("Login", "Auth");
+                }
+
+                var profile = await _patientProfileService.GetMyProfileAsync(currentUsername);
                 return View(profile);
             }
             catch (Exception ex)
             {
-                // Nếu lỗi (ví dụ không tìm thấy user), đá về trang chủ
-                TempData["Error"] = ex.Message;
-                return RedirectToAction("Index", "Home");
+                return Content($"Lỗi rồi Nam ơi: {ex.Message} --- Chi tiết: {ex.InnerException?.Message}");
             }
         }
 
