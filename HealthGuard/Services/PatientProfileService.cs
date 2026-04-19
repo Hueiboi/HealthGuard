@@ -42,31 +42,24 @@ namespace HealthGuard.Services
 
         public async Task<PatientProfileDto> UpdateProfileAsync(PatientProfileDto request, string username)
         {
-            // Tìm Patient hiện tại cùng thông tin User đi kèm
             var existingPatient = await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.User.Username == username);
 
-            if (existingPatient == null)
-            {
-                throw new KeyNotFoundException($"Không tìm thấy hồ sơ bệnh của người dùng: {username}");
-            }
+            if (existingPatient == null) throw new KeyNotFoundException("Không tìm thấy hồ sơ");
 
-            // Cập nhật thông tin trực tiếp (Thay cho logic của Mapper cũ)
+            // Cập nhật thông tin
             existingPatient.FullName = request.FullName;
             existingPatient.User.PhoneNumber = request.PhoneNumber;
-            // Lưu ý: Thường Email sẽ không cho phép cập nhật tại đây để đảm bảo tính duy nhất
 
-            // EF Core tự động theo dõi thay đổi và thực hiện lệnh UPDATE khi SaveChanges
+            // 👉 LƯU THÊM CÁC THÔNG TIN Y TẾ MỚI TỪ FORM
+            existingPatient.Height = request.Height;
+            existingPatient.Weight = request.Weight;
+            existingPatient.MedicalHistory = request.MedicalHistory;
+            // existingPatient.DateOfBirth = ... (Tuỳ DB của ông)
+
             await _context.SaveChangesAsync();
-
-            return new PatientProfileDto
-            {
-                Id = existingPatient.Id,
-                FullName = existingPatient.FullName,
-                Email = existingPatient.User.Email,
-                PhoneNumber = existingPatient.User.PhoneNumber
-            };
+            return request;
         }
     }
 }

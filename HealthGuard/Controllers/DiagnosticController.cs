@@ -9,9 +9,11 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization; // Nhớ thêm using này
 
 namespace HealthGuard.Controllers
 {
+    [Authorize] 
     public class DiagnosticController : Controller
     {
         private readonly DiagnosticService _diagnosticService;

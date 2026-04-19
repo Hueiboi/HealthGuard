@@ -46,7 +46,8 @@ namespace HealthGuard.Services
                 Role = userRole,
                 IsActive = true,
                 Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                PhoneNumber = "Chưa cập nhật"
             };
 
             _context.Users.Add(newUser);
@@ -55,7 +56,10 @@ namespace HealthGuard.Services
             var newPatient = new Patient
             {
                 User = newUser,
-                FullName = request.FullName // Lấy tên thật từ Form đăng ký
+                FullName = request.FullName,// Lấy tên thật từ Form đăng ký
+                Gender = "Khác",
+                MedicalHistory = "Chưa cập nhật"
+
             };
 
             _context.Patients.Add(newPatient);
@@ -70,7 +74,7 @@ namespace HealthGuard.Services
                 Email = newUser.Email,
                 RoleName = newUser.Role.RoleName,
                 IsActive = newUser.IsActive,
-                CreatedAt = newUser.CreatedAt
+                CreatedAt = newUser.CreatedAt,
             };
         }
 

@@ -18,6 +18,6 @@ namespace HealthGuard.Models.Entity
         public string Gender { get; set; }
         public double Height { get; set; }
         public double Weight { get; set; }
-        public string MedicalHistory { get; set; }
+        public string? MedicalHistory { get; set; }
     }
 }

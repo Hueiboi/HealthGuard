@@ -35,7 +35,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<DiagnosticService>();
 builder.Services.AddScoped<IJwtUtils, JwtUtils>();
-
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<PatientProfileService>();
 
 // 3. Cấu hình JWT Authentication
 var jwtSecret = "DayLaMotChuoiBaoMatCucKyDaiDeLamSecretKeyChoJWT1234567890";
@@ -103,6 +104,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();
