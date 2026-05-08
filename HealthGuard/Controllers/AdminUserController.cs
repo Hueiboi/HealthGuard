@@ -35,14 +35,12 @@ namespace HealthGuard.Controllers
             return Ok(user);
         }
 
-        // Tương đương với @PatchMapping trong Java
-        // Map<String, Boolean> của Java được chuyển thành Dictionary<string, bool> trong C#
+
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateUserStatusAsync(
             [FromRoute] long id,
             [FromBody] Dictionary<string, bool> statusUpdate)
         {
-            // Kiểm tra xem key "isActive" có tồn tại trong Dictionary không
             if (!statusUpdate.TryGetValue("isActive", out bool isActive))
             {
                 return BadRequest(new { message = "Thiếu trường isActive trong payload." });

@@ -8,7 +8,6 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/admin/disease")]
-    // [Authorize(Roles = "ROLE_ADMIN")] // Mở comment nếu bạn muốn chặn user thường
     public class DiseaseController : ControllerBase
     {
         private readonly DiseaseService _diseaseService;

@@ -72,7 +72,6 @@ namespace HealthGuard.Controllers
 
             try
             {
-                // 1. GỬI DATA SANG PYTHON
                 var pythonPayload = new { selectedSymptoms = request.SelectedSymptoms.Select(s => new { symptomId = s.SymptomId }).ToList() };
                 var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                 var jsonContent = new StringContent(JsonSerializer.Serialize(pythonPayload, jsonOptions), Encoding.UTF8, "application/json");
@@ -83,13 +82,9 @@ namespace HealthGuard.Controllers
                 if (!response.IsSuccessStatusCode)
                     return StatusCode(500, new { message = "Lỗi khi gọi mô hình AI Python." });
 
-                // 2. ĐỌC KẾT QUẢ TỪ PYTHON
                 var pythonResultString = await response.Content.ReadAsStringAsync();
 
-                // 3. LƯU LỊCH SỬ NGẦM (Bọc Try/Catch để KHÔNG BAO GIỜ LÀM CHẾT GIAO DIỆN)
-                // ===================================================================
-                // 3. LƯU LỊCH SỬ NGẦM (LƯU TỪNG BƯỚC ĐỂ TRÁNH LỖI "FAILED TO READ RESULT SET")
-                // ===================================================================
+ 
                 try
                 {
                     var pythonData = JsonSerializer.Deserialize<PythonAiResponse>(pythonResultString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -98,10 +93,9 @@ namespace HealthGuard.Controllers
 
                     if (user != null && pythonData?.Diagnoses != null && pythonData.Diagnoses.Count > 0)
                     {
-                        // BƯỚC 1: LƯU PHIÊN KHÁM NGAY LẬP TỨC ĐỂ LẤY ID
                         var newSession = new DiagnosticSession { User = user, Status = "Hoàn tất", CreatedAt = DateTime.Now };
                         _context.DiagnosticSessions.Add(newSession);
-                        await _context.SaveChangesAsync(); // <--- Lưu phát 1 (Chắc chắn có SessionId)
+                        await _context.SaveChangesAsync(); 
 
                         var aiResults = new List<DiagnosisResult>();
 
@@ -118,7 +112,6 @@ namespace HealthGuard.Controllers
                                 {
                                     DiseaseCode = generatedCode,
                                     DiseaseName = diag.DiseaseName,
-                                    // Cắt bớt chuỗi nếu Python trả về quá dài (phòng hờ lỗi tràn cột DB)
                                     Description = string.IsNullOrEmpty(diag.Description) ? "Đang cập nhật" :
                                                   (diag.Description.Length > 490 ? diag.Description.Substring(0, 490) + "..." : diag.Description),
                                     TreatmentAdvice = string.IsNullOrEmpty(diag.Treatment) ? "Đang cập nhật" :
@@ -126,33 +119,29 @@ namespace HealthGuard.Controllers
                                 };
 
                                 _context.Diseases.Add(disease);
-                                // BƯỚC 2: LƯU BỆNH MỚI NGAY LẬP TỨC ĐỂ LẤY ID
-                                await _context.SaveChangesAsync(); // <--- Lưu phát 2 (Chắc chắn có DiseaseId)
+                                await _context.SaveChangesAsync(); 
                             }
 
-                            // BƯỚC 3: LẮP RÁP KẾT QUẢ KHI ĐÃ CÓ ĐỦ ID CỦA CHA VÀ CON
                             aiResults.Add(new DiagnosisResult
                             {
-                                SessionId = newSession.Id, // Dùng thẳng ID cho chắc ăn
-                                DiseaseId = disease.Id,              // Dùng thẳng ID cho chắc ăn
+                                SessionId = newSession.Id, 
+                                DiseaseId = disease.Id,              
                                 ProbabilityPercentage = diag.Probability
                             });
                         }
 
-                        // BƯỚC 4: LƯU KẾT QUẢ CUỐI CÙNG
                         if (aiResults.Count > 0)
                         {
                             _context.DiagnosisResults.AddRange(aiResults);
-                            await _context.SaveChangesAsync(); // <--- Lưu phát 3 (Thành công 100%)
+                            await _context.SaveChangesAsync(); // 
                         }
                     }
                 }
                 catch (Exception dbEx)
                 {
-                    Console.WriteLine("\n🔥 LỖI LƯU DB: " + dbEx.Message + (dbEx.InnerException != null ? " ---> " + dbEx.InnerException.Message : "") + "\n");
+                    Console.WriteLine("\n LỖI LƯU DB: " + dbEx.Message + (dbEx.InnerException != null ? " ---> " + dbEx.InnerException.Message : "") + "\n");
                 }
 
-                // 4. TRẢ KẾT QUẢ CHO FRONTEND
                 return Content(pythonResultString, "application/json");
             }
             catch (Exception ex)

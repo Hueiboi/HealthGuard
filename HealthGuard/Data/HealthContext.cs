@@ -1,4 +1,4 @@
-﻿using HealthGuard.Models.Entity; // Đảm bảo đúng folder Entity số ít của ông
+﻿using HealthGuard.Models.Entity; 
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthGuard.Data
@@ -22,34 +22,26 @@ namespace HealthGuard.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. RÀNG BUỘC DUY NHẤT (UNIQUE)
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Username).IsUnique();
             modelBuilder.Entity<User>().HasIndex(u => u.PhoneNumber).IsUnique(false);
             modelBuilder.Entity<Disease>()
-                .HasIndex(d => d.DiseaseCode).IsUnique(); // Mã bệnh phải là duy nhất
-
-            // 2. KHÓA PHỨC HỢP (COMPOSITE KEYS) VÀ RÀNG BUỘC
-
-            // Bảng liên kết Bệnh - Triệu chứng (Vì bảng này thường không có cột Id riêng nên dùng HasKey là chuẩn)
+                .HasIndex(d => d.DiseaseCode).IsUnique(); 
             modelBuilder.Entity<DiseaseSymptom>()
                 .HasKey(ds => new { ds.DiseaseId, ds.SymptomId });
 
-            // ĐÃ FIX: Bảng liên kết Phiên khám - Triệu chứng
-            // Đổi SessionId thành DiagnosticSessionId cho khớp Entity. 
-            // Đổi HasKey thành HasIndex().IsUnique() vì bảng này đã có cột Id làm khóa chính.
             modelBuilder.Entity<SessionSymptom>()
                 .HasIndex(ss => new { ss.DiagnosticSessionId, ss.SymptomId }).IsUnique();
 
-            // 3. QUAN HỆ ĐẶC BIỆT (1-1)
-            // Một User (nếu là USER) chỉ có 1 Hồ sơ Patient
             modelBuilder.Entity<Patient>()
                 .HasOne(p => p.User)
-                .WithOne()
+                .WithOne(u => u.Patient) // <-- TRUYỀN THÊM CÁI NÀY VÀO LÀ EF HẾT BỊ LÚ
                 .HasForeignKey<Patient>(p => p.UserId)
-                .OnDelete(DeleteBehavior.Cascade); // Xóa User thì bay luôn Hồ sơ Patient
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // 4. DATA SEEDING (Dữ liệu mồi)
+            // Bồi thêm 1 đòn chí mạng để chắc chắn UserId1 không bao giờ quay lại
+            modelBuilder.Entity<Patient>().Ignore("UserId1");
+
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, RoleName = "ROLE_ADMIN" },
                 new Role { Id = 2, RoleName = "ROLE_USER" }

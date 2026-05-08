@@ -1,6 +1,6 @@
 ﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.Entity; // Chuẩn folder Entity số ít của ông
+using HealthGuard.Models.Entity; 
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -42,8 +42,7 @@ namespace HealthGuard.Services
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(s => s.SymptomName.ToLower().Contains(keyword.ToLower()));
 
-            // Nếu phân trang page bắt đầu từ 1, thì (page - 1) * size. 
-            // Nếu API của ông truyền page từ 0 thì ông sửa thành page * size nhé.
+  
             return await query
                 .OrderBy(s => s.SymptomName)
                 .Skip((page > 0 ? page - 1 : 0) * size)
@@ -52,9 +51,7 @@ namespace HealthGuard.Services
                 .ToListAsync();
         }
 
-        // ==========================================
-        // ĐÃ THÊM LẠI: Hàm cập nhật Triệu chứng (bị thiếu)
-        // ==========================================
+
         public async Task<SymptomDto> UpdateSymptomAsync(long id, SymptomDto request)
         {
             var existingSymptom = await _context.Symptoms.FindAsync(id);
@@ -65,15 +62,12 @@ namespace HealthGuard.Services
 
             existingSymptom.SymptomName = request.SymptomName;
 
-            // EF Core tự track thay đổi và sinh lệnh UPDATE
             await _context.SaveChangesAsync();
 
             return new SymptomDto { Id = existingSymptom.Id, SymptomName = existingSymptom.SymptomName };
         }
 
-        // ==========================================
-        // ĐÃ THÊM LẠI: Hàm xóa Triệu chứng (bị thiếu)
-        // ==========================================
+
         public async Task DeleteSymptomAsync(long id)
         {
             var symptom = await _context.Symptoms.FindAsync(id);
@@ -102,7 +96,6 @@ namespace HealthGuard.Services
                 _context.DiseaseSymptoms.Add(diseaseSymptom);
             }
 
-            // Ép kiểu (float) để khớp với Entity
             diseaseSymptom.WeightScore = rule.WeightScore;
 
             await _context.SaveChangesAsync();

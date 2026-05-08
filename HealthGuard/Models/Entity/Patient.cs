@@ -8,8 +8,9 @@ namespace HealthGuard.Models.Entity
         [Key]
         public long Id { get; set; }
 
-        [ForeignKey("User")]
         public long UserId { get; set; }
+
+        [ForeignKey("UserId")]
         public virtual User User { get; set; }
 
         [MaxLength(100)]
@@ -22,5 +23,11 @@ namespace HealthGuard.Models.Entity
         public double Height { get; set; }
         public double Weight { get; set; }
         public string? MedicalHistory { get; set; }
+
+        public string? AvatarUrl { get; set; }
+
+        public string? Gender { get; set; }
+        public string? BloodType { get; set; }
+        public string? Allergies { get; set; }
     }
 }

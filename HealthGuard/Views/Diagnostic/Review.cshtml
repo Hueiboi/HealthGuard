@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Kết quả chẩn đoán - HealthGuard";
-    Layout = null; // TẮT LAYOUT ĐỂ DÙNG HEADER ĐỒNG BỘ
+    Layout = null; 
 }
 
 <!DOCTYPE html>
@@ -21,7 +21,6 @@
             padding-bottom: 50px;
         }
 
-        /* --- CSS CỦA ÔNG GIỮ NGUYÊN 100% --- */
         .main-content {
             max-width: 1100px;
             margin: 40px auto;
@@ -435,8 +434,7 @@
             }
         });
 
-        // 2. LOGIC XỬ LÝ GỬI FEEDBACK CỦA POPUP
-        // 2. LOGIC XỬ LÝ GỬI FEEDBACK CỦA POPUP (API THẬT)
+
         async function submitFeedback(event) {
             const category = document.getElementById('feedbackCategory').value;
             const content = document.getElementById('feedbackContent').value;
@@ -446,31 +444,27 @@
                 return;
             }
 
-            // Vì trong Entity của ông chỉ có cột Comments, tui sẽ gộp cái Category (Chủ đề)
-            // vào chung với nội dung luôn cho gọn: "[Chủ đề] Nội dung..."
+
             const finalComment = category ? `[${category.toUpperCase()}] ${content}` : content;
 
-            // Đổi giao diện nút thành đang load
             const btn = event.target;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
             btn.disabled = true;
 
             try {
-                // Gọi sang cái API Controller anh em mình vừa tạo
                 const response = await fetch('/api/patient/feedbacks', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         comments: finalComment,
-                        sessionId: null // Tạm thời để null (Gửi feedback chung). Nếu ông lôi được SessionId ra thì truyền số vào đây.
+                        sessionId: null 
                     })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Tắt Popup Modal
                     const modalElement = document.getElementById('feedbackModal');
                     const modalInstance = bootstrap.Modal.getInstance(modalElement);
                     modalInstance.hide();
@@ -484,7 +478,6 @@
                 console.error("Lỗi gửi Feedback:", error);
                 alert("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
             } finally {
-                // Trả lại trạng thái nút ban đầu
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }

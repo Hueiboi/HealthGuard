@@ -8,7 +8,6 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/admin/symptom")]
-    // [Authorize(Roles = "ROLE_ADMIN")]
     public class SymptomController : ControllerBase
     {
         private readonly SymptomService _symptomService;
@@ -22,7 +21,6 @@ namespace HealthGuard.Controllers
         public async Task<IActionResult> CreateSymptomAsync([FromBody] SymptomDto request)
         {
             var createdSymptom = await _symptomService.CreateSymptomAsync(request);
-            // Bạn có thể trả về object vừa tạo kèm mã 201
             return StatusCode(201, createdSymptom);
         }
 

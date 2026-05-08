@@ -29,7 +29,7 @@ namespace HealthGuard.Services
             };
 
             _context.Diseases.Add(disease);
-            await _context.SaveChangesAsync(); // Lưu xuống DB để lấy Id tự sinh
+            await _context.SaveChangesAsync(); 
 
             request.Id = disease.Id;
             return request;
@@ -39,7 +39,6 @@ namespace HealthGuard.Services
         {
             var query = _context.Diseases.AsQueryable();
 
-            // Xử lý tìm kiếm bằng LINQ
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 string lowerKeyword = keyword.ToLower();
@@ -47,7 +46,6 @@ namespace HealthGuard.Services
                                          d.DiseaseCode.ToLower().Contains(lowerKeyword));
             }
 
-            // Phân trang và map trực tiếp sang DTO
             return await query
                 .OrderBy(d => d.DiseaseName)
                 .Skip((page - 1) * size)
@@ -67,7 +65,6 @@ namespace HealthGuard.Services
             var disease = await _context.Diseases.FindAsync(id);
             if (disease == null)
             {
-                // Dùng Exception chuẩn của .NET
                 throw new KeyNotFoundException($"Không tìm thấy bệnh lý với ID: {id}");
             }
 
@@ -88,12 +85,11 @@ namespace HealthGuard.Services
                 throw new KeyNotFoundException($"Không tìm thấy bệnh lý với ID: {id}");
             }
 
-            // Cập nhật dữ liệu (Thay cho Mapper)
             existingDisease.DiseaseCode = request.DiseaseCode;
             existingDisease.DiseaseName = request.DiseaseName;
             existingDisease.TreatmentAdvice = request.TreatmentAdvice;
 
-            await _context.SaveChangesAsync(); // EF Core tự theo dõi và cập nhật
+            await _context.SaveChangesAsync(); 
 
             return new DiseaseDto
             {

@@ -8,13 +8,11 @@ using System.Threading.Tasks;
 
 namespace HealthGuard.Controllers
 {
-    // ĐÃ XÓA [Authorize] ĐỂ KHÁCH VÃNG LAI CÓ THỂ VÀO ĐƯỢC
     public class HomeController : Controller
     {
         private readonly PatientProfileService _patientProfileService;
-        private readonly HealthContext _context; // Khai báo thêm Context để gọi DB
+        private readonly HealthContext _context; 
 
-        // Bơm cả Service và Context vào
         public HomeController(PatientProfileService patientProfileService, HealthContext context)
         {
             _patientProfileService = patientProfileService;
@@ -23,20 +21,17 @@ namespace HealthGuard.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // 1. KIỂM TRA NẾU LÀ KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP)
             if (User.Identity == null || !User.Identity.IsAuthenticated)
             {
                 ViewBag.IsGuest = true;
-                return View(); // Trả về giao diện ngay lập tức
+                return View();
             }
 
-            // 2. NẾU ĐÃ ĐĂNG NHẬP THÌ CHẠY LOGIC XỬ LÝ DỮ LIỆU
             ViewBag.IsGuest = false;
             string username = User.Identity.Name;
 
             try
             {
-                // --- PHẦN 2.1: XỬ LÝ HỒ SƠ & BMI ---
                 var profile = await _patientProfileService.GetMyProfileAsync(username);
 
                 ViewBag.UserName = !string.IsNullOrEmpty(profile.FullName) && profile.FullName != "Chưa cập nhật tên"
@@ -62,20 +57,18 @@ namespace HealthGuard.Controllers
                     ViewBag.HasHealthRecords = false;
                 }
 
-                // --- PHẦN 2.2: LẤY DỮ LIỆU CHẨN ĐOÁN AI THẬT TỪ DATABASE ---
                 var latestSession = await _context.DiagnosticSessions
                     .Include(s => s.DiagnosisResults)
                         .ThenInclude(dr => dr.Disease)
                     .Where(s => s.User.Username == username)
                     .OrderByDescending(s => s.CreatedAt)
-                    .FirstOrDefaultAsync(); // Lấy phiên khám mới nhất
+                    .FirstOrDefaultAsync(); 
 
                 if (latestSession != null && latestSession.DiagnosisResults.Any())
                 {
                     ViewBag.HasRecentDiagnosis = true;
                     ViewBag.DiagnosisDate = latestSession.CreatedAt.ToString("dd MMM, yyyy");
 
-                    // Lấy kết quả bệnh có tỉ lệ % cao nhất trong phiên khám đó
                     var topResult = latestSession.DiagnosisResults.OrderByDescending(r => r.ProbabilityPercentage).First();
                     ViewBag.TopDiseaseName = topResult.Disease.DiseaseName;
                     ViewBag.DiagnosisScore = $"{topResult.ProbabilityPercentage}%";
@@ -94,5 +87,8 @@ namespace HealthGuard.Controllers
 
             return View();
         }
+
+
+        
     }
 }
