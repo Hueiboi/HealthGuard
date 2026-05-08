@@ -9,14 +9,8 @@ namespace HealthGuard.Data
     {
         public static async Task SeedAsync(HealthContext context)
         {
-            // 1. BỎ EnsureCreatedAsync!
-            // Vì anh em mình đã dùng Migrations (Update-Database) để tạo DB, 
-            // hàm này sẽ làm loạn lịch sử Migration của EF Core.
-            // await context.Database.EnsureCreatedAsync();
-
             try
             {
-                // 2. Khởi tạo Roles
                 var userRole = await context.Roles.FirstOrDefaultAsync(r => r.RoleName == "ROLE_USER");
                 if (userRole == null)
                 {
@@ -34,7 +28,6 @@ namespace HealthGuard.Data
                 await context.SaveChangesAsync();
                 Console.WriteLine("Đã kiểm tra và khởi tạo danh mục Roles thành công!");
 
-                // 3. Khởi tạo Admin
                 var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "admin");
                 if (adminUser == null)
                 {
@@ -69,17 +62,15 @@ namespace HealthGuard.Data
             }
             catch (DbUpdateException ex)
             {
-                // 4. LÔI CỔ INNER EXCEPTION RA ÁNH SÁNG
                 var innerMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
 
-                // Đổi màu Console cho dễ nhìn lỗi
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n=================================================");
                 Console.WriteLine($"[LỖI CƠ SỞ DỮ LIỆU KHI SEED]: {innerMessage}");
                 Console.WriteLine("=================================================\n");
                 Console.ResetColor();
 
-                throw; // Vẫn throw để App dừng lại cho ông biết đường fix
+                throw; 
             }
         }
     }

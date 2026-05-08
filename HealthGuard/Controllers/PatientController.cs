@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace HealthGuard.Controllers
 {
-    [Authorize] // Bắt buộc đăng nhập mới được vào
-    public class PatientController : Controller // ĐÃ ĐỔI: Thành Controller để trả về View
+    [Authorize] 
+    public class PatientController : Controller 
     {
         private readonly PatientProfileService _patientProfileService;
 
@@ -18,7 +18,6 @@ namespace HealthGuard.Controllers
             _patientProfileService = patientProfileService;
         }
 
-        // 1. MỞ TRANG GIAO DIỆN HỒ SƠ
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -28,7 +27,6 @@ namespace HealthGuard.Controllers
 
                 if (string.IsNullOrEmpty(currentUsername))
                 {
-                    // Nếu vẫn null thì có thể là do chưa Login hoặc Cookie hết hạn
                     return RedirectToAction("Login", "Auth");
                 }
 
@@ -41,7 +39,6 @@ namespace HealthGuard.Controllers
             }
         }
 
-        // 2. NHẬN DỮ LIỆU TỪ NÚT "LƯU THAY ĐỔI"
         [HttpPost]
         public async Task<IActionResult> UpdateProfile([FromForm] PatientProfileDto request)
         {
@@ -49,19 +46,17 @@ namespace HealthGuard.Controllers
             {
                 string currentUsername = User.Identity.Name;
 
-                // Cập nhật xuống DB
                 await _patientProfileService.UpdateProfileAsync(request, currentUsername);
 
-                // Hiện thông báo xanh lá cây và load lại trang
                 TempData["Success"] = "Cập nhật hồ sơ thành công!";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                // Nếu lỗi, giữ nguyên trang và báo chữ đỏ
                 ViewBag.Error = "Cập nhật thất bại: " + ex.Message;
                 return View("Index", request);
             }
         }
+
     }
 }

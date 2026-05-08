@@ -7,8 +7,8 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/patient/history")]
-    [Authorize] // Yêu cầu phải có Token hợp lệ
-    // Bạn có thể dùng [Authorize(Roles = "ROLE_USER")] nếu muốn phân quyền chặt chẽ hơn
+    [Authorize] 
+    
     public class PatientHistoryController : ControllerBase
     {
         private readonly PatientHistoryService _historyService;
@@ -23,7 +23,6 @@ namespace HealthGuard.Controllers
             [FromQuery] int page = 0,
             [FromQuery] int size = 10)
         {
-            // Lấy username từ Token (thay thế cho Principal.getName() bên Java)
             string username = User.Identity.Name;
 
             var history = await _historyService.GetMyHistoryListAsync(username, page, size);

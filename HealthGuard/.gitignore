@@ -1,3 +1,4 @@
 ﻿# Cấm đẩy các thư mục biên dịch của C#
 [Bb]in/
 [Oo]bj/
+.vs/

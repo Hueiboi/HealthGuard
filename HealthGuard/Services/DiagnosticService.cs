@@ -17,7 +17,6 @@ namespace HealthGuard.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private const string PYTHON_API_URL = "http://localhost:5000/api/ai-chat";
 
-        // Chỉ tiêm DbContext và HttpClientFactory
         public DiagnosticService(HealthContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
@@ -26,12 +25,10 @@ namespace HealthGuard.Services
 
         public async Task<DiagnosticResponseDto> PerformDiagnosisAsync(string username, DiagnosticRequestDto request)
         {
-            // 1. Tìm người dùng
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null) throw new UnauthorizedAccessException("Không tìm thấy người dùng!");
 
-            // 2. Tạo phiên chẩn đoán mới
-            // Ép kiểu rành mạch để tránh lỗi "cannot convert"
+ 
             var session = new DiagnosticSession
             {
                 User = user,
@@ -40,7 +37,6 @@ namespace HealthGuard.Services
             };
             _context.DiagnosticSessions.Add(session);
 
-            // 3. Lưu danh sách triệu chứng
             foreach (var input in request.SelectedSymptoms)
             {
                 var symptom = await _context.Symptoms.FindAsync(input.SymptomId);
@@ -56,10 +52,8 @@ namespace HealthGuard.Services
                 _context.SessionSymptoms.Add(sessionSymptom);
             }
 
-            // 4. Gọi server AI Python
             var pythonResults = await CallPythonServiceAsync(request);
 
-            // 5. Xử lý kết quả trả về từ AI
             var finalResults = new List<ResultResponseDto>();
             foreach (var pyResult in pythonResults)
             {
@@ -82,7 +76,6 @@ namespace HealthGuard.Services
                 });
             }
 
-            // 6. Lưu tất cả thay đổi xuống DB một lần duy nhất để tối ưu
             await _context.SaveChangesAsync();
 
             return new DiagnosticResponseDto

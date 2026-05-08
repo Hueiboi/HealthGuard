@@ -3,12 +3,10 @@
     ViewData["Title"] = "Hồ sơ Bệnh nhân - HealthGuard";
     Layout = null;
 
-    // Logic tính BMI giữ nguyên, lấy dữ liệu từ Model
     var bmiValue = (Model.Weight > 0 && Model.Height > 0)
                    ? Math.Round(Model.Weight / Math.Pow(Model.Height / 100.0, 2), 1)
                    : 0;
 
-    // Logic xác định trạng thái BMI
     string bmiStatus = "Bình thường";
     if (bmiValue > 0 && bmiValue < 18.5) bmiStatus = "Gầy";
     else if (bmiValue >= 25) bmiStatus = "Thừa cân (Overweight)";
@@ -25,7 +23,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
-        /* TOÀN BỘ CSS CỦA ÔNG GIỮ NGUYÊN 100% */
         :root {
             --primary-blue: #0d47a1;
             --bg-color: #f8fafc;

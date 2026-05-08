@@ -3,6 +3,7 @@ using HealthGuard.Models.Dto;
 using HealthGuard.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
@@ -16,16 +17,12 @@ namespace HealthGuard.Services
             _context = context;
         }
 
-        // ==========================================
-        // 1. HÀM LẤY DỮ LIỆU TỪ DB LÊN GIAO DIỆN
-        // ==========================================
         public async Task<PatientProfileDto> GetMyProfileAsync(string username)
         {
             var myProfile = await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.User.Username == username);
 
-            // NẾU CHƯA CÓ HỒ SƠ -> TỰ TẠO MỚI (Logic cũ tui giữ nguyên cho ông)
             if (myProfile == null)
             {
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
@@ -41,7 +38,6 @@ namespace HealthGuard.Services
                 await _context.SaveChangesAsync();
             }
 
-            // 👉 LỖI LÀ Ở ĐÂY LÚC TRƯỚC: Phải map ĐỦ TẤT CẢ các cột mới thêm vào DTO
             return new PatientProfileDto
             {
                 Id = myProfile.Id,
@@ -49,18 +45,20 @@ namespace HealthGuard.Services
                 Email = myProfile.User?.Email,
                 PhoneNumber = myProfile.User?.PhoneNumber,
 
-                // Mấy dòng này lúc trước bị thiếu nè:
                 DateOfBirth = myProfile.DateOfBirth,
                 EmergencyContact = myProfile.EmergencyContact,
                 MedicalHistory = myProfile.MedicalHistory,
                 Height = myProfile.Height,
-                Weight = myProfile.Weight
+                Weight = myProfile.Weight,
+
+                // 👉 ĐÃ FIX: THÊM 4 DÒNG NÀY ĐỂ API TRẢ ĐỦ DỮ LIỆU VỀ APP
+                AvatarUrl = myProfile.AvatarUrl,
+                Gender = myProfile.Gender,
+                BloodType = myProfile.BloodType,
+                Allergies = myProfile.Allergies
             };
         }
 
-        // ==========================================
-        // 2. HÀM NHẬN DỮ LIỆU TỪ GIAO DIỆN LƯU XUỐNG DB
-        // ==========================================
         public async Task UpdateProfileAsync(PatientProfileDto request, string username)
         {
             var patient = await _context.Patients
@@ -69,21 +67,43 @@ namespace HealthGuard.Services
 
             if (patient == null) throw new Exception("Không tìm thấy hồ sơ!");
 
-            // 👉 GÁN TẤT CẢ DỮ LIỆU (Bỏ luôn mấy cái điều kiện if>0 cho nó lưu sảng khoái)
             patient.FullName = request.FullName;
             patient.DateOfBirth = request.DateOfBirth;
             patient.EmergencyContact = request.EmergencyContact;
             patient.MedicalHistory = request.MedicalHistory;
             patient.Height = request.Height;
             patient.Weight = request.Weight;
+            patient.AvatarUrl = request.AvatarUrl;
+            patient.Gender = request.Gender;
+            patient.BloodType = request.BloodType;
+            patient.Allergies = request.Allergies;
 
-            // Gán số điện thoại (Bảng User)
-            if (patient.User != null && !string.IsNullOrEmpty(request.PhoneNumber))
+            if (!string.IsNullOrEmpty(request.AvatarUrl) && request.AvatarUrl.StartsWith("data:image"))
             {
-                patient.User.PhoneNumber = request.PhoneNumber;
+                try
+                {
+                    var base64Data = request.AvatarUrl.Substring(request.AvatarUrl.IndexOf(",") + 1);
+                    byte[] imageBytes = Convert.FromBase64String(base64Data);
+
+                    string uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+
+                    string fileName = $"avatar_{username}_{DateTime.Now.Ticks}.jpg";
+                    string filePath = Path.Combine(uploadFolder, fileName);
+
+                    await File.WriteAllBytesAsync(filePath, imageBytes);
+
+                    patient.AvatarUrl = $"/uploads/{fileName}";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Lỗi lưu ảnh: " + ex.Message);
+                }
             }
 
-            // Cập nhật và lưu
             _context.Patients.Update(patient);
             await _context.SaveChangesAsync();
         }

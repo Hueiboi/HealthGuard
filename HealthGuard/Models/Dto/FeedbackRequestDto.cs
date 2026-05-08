@@ -4,7 +4,6 @@ namespace HealthGuard.Models.Dto
 {
     public class FeedbackRequestDto
     {
-        // Có thể null nếu người dùng góp ý chung không liên quan đến ca chẩn đoán nào
         public long? SessionId { get; set; }
 
         [Required(ErrorMessage = "Nội dung phản hồi không được để trống.")]

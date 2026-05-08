@@ -8,7 +8,6 @@ namespace HealthGuard.Controllers
 {
     [ApiController]
     [Route("api/admin/roles")]
-    // [Authorize(Roles = "ROLE_ADMIN")]
     public class RoleController : ControllerBase
     {
         private readonly RoleService _roleService;
@@ -22,7 +21,6 @@ namespace HealthGuard.Controllers
         public async Task<IActionResult> CreateRoleAsync([FromBody] RoleDto request)
         {
             var createdRole = await _roleService.CreateRoleAsync(request);
-            // HttpStatus.CREATED (201)
             return StatusCode(201, createdRole);
         }
 
@@ -51,7 +49,7 @@ namespace HealthGuard.Controllers
         public async Task<IActionResult> DeleteRoleAsync([FromRoute] long id)
         {
             await _roleService.DeleteRoleAsync(id);
-            return NoContent(); // Tương đương ResponseEntity.noContent().build()
+            return NoContent(); 
         }
     }
 }

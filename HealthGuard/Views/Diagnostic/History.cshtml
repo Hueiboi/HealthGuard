@@ -1,6 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Lịch sử Chẩn đoán - HealthGuard";
-    Layout = null; // Tạm thời vẫn để null cho đến khi ông dùng chung _Layout
+    Layout = null; 
 }
 @model IEnumerable<HealthGuard.Models.Entity.DiagnosticSession>
 
@@ -29,7 +29,6 @@
             padding-bottom: 60px;
         }
 
-        /* KHU VỰC TIÊU ĐỀ TRANG */
         .page-container {
             max-width: 1200px;
             margin: 0 auto;
@@ -64,7 +63,6 @@
             margin-bottom: 40px;
         }
 
-        /* BỐ CỤC BENTO GRID */
         .history-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -75,7 +73,6 @@
             grid-column: span 2;
         }
 
-        /* THIẾT KẾ THẺ BÀI (CARD) */
         .history-card {
             background: white;
             border-radius: 24px;
@@ -94,7 +91,6 @@
                 box-shadow: 0 15px 50px rgba(0,0,0,0.06);
             }
 
-        /* Thẻ đặc biệt: Hình ảnh X-Quang */
         .card-image-bg {
             background: linear-gradient(to top, rgba(15,23,42,0.9), rgba(15,23,42,0.4)), url('https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&q=80&w=800') center/cover;
             color: white;
@@ -329,7 +325,6 @@
                     }
                     else
                     {
-                        // CÁC CARD CÒN LẠI: Kích thước nhỏ
                         <div class="history-card">
                             <div class="date-pill"><i class="bi bi-calendar3"></i> @session.CreatedAt.ToString("MMM dd, yyyy").ToUpper()</div>
                             <h2 class="card-title" style="font-size: 1.2rem;">@topDisease.Disease.DiseaseName</h2>

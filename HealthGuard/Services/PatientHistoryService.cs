@@ -17,10 +17,8 @@ namespace HealthGuard.Services
             _context = context;
         }
 
-        // Lấy danh sách tổng quan các lần khám
         public async Task<IEnumerable<HistoryListDto>> GetMyHistoryListAsync(string username, int page, int size)
         {
-            // Dùng LINQ để phân trang và map DTO ngay trên SQL
             return await _context.DiagnosticSessions
                 .Where(s => s.User.Username == username)
                 .OrderByDescending(s => s.CreatedAt)
@@ -35,10 +33,8 @@ namespace HealthGuard.Services
                 .ToListAsync();
         }
 
-        // Lấy chi tiết 1 lần khám
         public async Task<HistoryDetailDto> GetHistoryDetailAsync(string username, long sessionId)
         {
-            // Dùng Include và ThenInclude để lấy sạch dữ liệu liên quan trong 1 nốt nhạc
             var session = await _context.DiagnosticSessions
                 .Include(s => s.SessionSymptoms).ThenInclude(ss => ss.Symptom)
                 .Include(s => s.DiagnosisResults).ThenInclude(dr => dr.Disease)

@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<HealthContext>(options =>
-    options.UseMySql(
+   options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection")),
         mySqlOptions =>
@@ -23,10 +23,14 @@ builder.Services.AddDbContext<HealthContext>(options =>
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<DiagnosticService>();
+builder.Services.AddScoped<SymptomService>();
 builder.Services.AddScoped<IJwtUtils, JwtUtils>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PatientProfileService>();
 builder.Services.AddScoped<PatientFeedbackService>();
+builder.Services.AddMemoryCache();
+// Nhớ thêm dòng này để khởi tạo MobileService
+builder.Services.AddScoped<MobileService>();
 
 var jwtSecret = "DayLaMotChuoiBaoMatCucKyDaiDeLamSecretKeyChoJWT1234567890";
 var key = Encoding.ASCII.GetBytes(jwtSecret);
@@ -86,5 +90,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllers();
 
 app.Run();
