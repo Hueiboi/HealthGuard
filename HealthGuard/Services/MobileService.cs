@@ -122,7 +122,6 @@ namespace HealthGuard.Services
             // ==========================================
             // BƯỚC 3: LỌC TOP 5 BỆNH VÀ LƯU KẾT QUẢ
             // ==========================================
-            // ĐÂY LÀ CHÌA KHÓA: Chỉ lấy 5 bệnh cao nhất để tránh làm chết DB Aiven!
             var topDiagnoses = pythonData.Diagnoses
                 .Where(d => d.Probability > 0)
                 .OrderByDescending(d => d.Probability)
@@ -146,7 +145,7 @@ namespace HealthGuard.Services
                         TreatmentAdvice = string.IsNullOrEmpty(diag.Treatment) ? "Đang cập nhật" : diag.Treatment
                     };
                     _context.Diseases.Add(disease);
-                    await _context.SaveChangesAsync(); // Cần save để lấy ID bệnh mới
+                    await _context.SaveChangesAsync();
                 }
 
                 aiResults.Add(new DiagnosisResult { SessionId = newSession.Id, DiseaseId = disease.Id, ProbabilityPercentage = diag.Probability });
@@ -158,7 +157,6 @@ namespace HealthGuard.Services
                 await _context.SaveChangesAsync();
             }
 
-            // Trả về thẳng TOP 5 cho Mobile App thay vì trả hết 20 bệnh làm nặng App
             return topDiagnoses;
         }
 
@@ -195,7 +193,8 @@ namespace HealthGuard.Services
             return new UserResponseDto { Id = newUser.Id, Username = newUser.Username, Email = newUser.Email, RoleName = newUser.Role.RoleName, IsActive = newUser.IsActive, CreatedAt = newUser.CreatedAt };
         }
 
-        public async Task<bool> SendOtpAsync(string phoneNumber)
+        // 👉 ĐÃ SỬA HÀM NÀY ĐỂ TRẢ VỀ CHUỖI MÃ OTP
+        public async Task<string> SendOtpAsync(string phoneNumber)
         {
             var userExists = await _context.Users.AnyAsync(u => u.PhoneNumber == phoneNumber);
             if (!userExists) throw new InvalidOperationException("Số điện thoại chưa được đăng ký. Vui lòng đăng ký tài khoản!");
@@ -207,7 +206,9 @@ namespace HealthGuard.Services
             _cache.Set($"OTP_{phoneNumber}", otpCode, cacheOptions);
 
             Console.WriteLine($"\n[MOBILE APP] Ma OTP cua {phoneNumber} la: {otpCode}\n");
-            return true;
+
+            // Ép trả mã OTP ra ngoài
+            return otpCode;
         }
 
         public async Task<(string Token, string FullName)> VerifyOtpAsync(string phoneNumber, string otpCode)
@@ -232,19 +233,16 @@ namespace HealthGuard.Services
             }
             throw new UnauthorizedAccessException("Mã OTP đã hết hạn hoặc không tồn tại!");
         }
+
         // =========================================================================
-        // HÀM CUNG CẤP DỮ LIỆU HUẤN LUYỆN CHO PYTHON AI
+        // CÁC HÀM KHÁC GIỮ NGUYÊN BÊN DƯỚI...
         // =========================================================================
         public async Task<object> GetAiKnowledgeBaseAsync()
         {
-            // 1. Lấy dữ liệu từ DB về bộ nhớ (RAM) trước bằng ToListAsync
-            // Ở bước này, EF Core sẽ chỉ chạy các lệnh SQL mà nó hiểu
             var rawDiseases = await _context.Diseases
                 .Include(d => d.DiseaseSymptoms)
                 .ToListAsync();
 
-            // 2. Bây giờ dữ liệu đã nằm trên RAM, ta thoải mái ép kiểu .ToString() 
-            // mà không sợ SQL "phàn nàn" nữa
             var aiKnowledge = rawDiseases.Select(d => new {
                 diseaseName = d.DiseaseName,
                 description = d.Description,
@@ -258,9 +256,6 @@ namespace HealthGuard.Services
             return aiKnowledge;
         }
 
-        // =========================================================================
-        // LỊCH SỬ & CHI TIẾT CHẨN ĐOÁN
-        // =========================================================================
         public async Task<object> GetDiagnosisHistoryAsync(string username)
         {
             var sessions = await _context.DiagnosticSessions
@@ -321,9 +316,6 @@ namespace HealthGuard.Services
             };
         }
 
-        // =========================================================================
-        // XÓA LỊCH SỬ CHẨN ĐOÁN
-        // =========================================================================
         public async Task<bool> DeleteDiagnosisAsync(long sessionId, string username)
         {
             var session = await _context.DiagnosticSessions
@@ -331,7 +323,6 @@ namespace HealthGuard.Services
 
             if (session == null) throw new Exception("Không tìm thấy kết quả hoặc bạn không có quyền xóa.");
 
-            // Do EF Core thường đã cài đặt Cascade Delete, xóa Session sẽ tự xóa Results và Symptoms đi kèm
             _context.DiagnosticSessions.Remove(session);
             await _context.SaveChangesAsync();
             return true;
@@ -365,7 +356,6 @@ namespace HealthGuard.Services
 
             if (sessionId.HasValue)
             {
-                // Kiểm tra xem session này có đúng là của user này không trước khi gắn feedback
                 var sessionExists = await _context.DiagnosticSessions
                     .AnyAsync(s => s.Id == sessionId.Value && s.User.Id == user.Id);
 

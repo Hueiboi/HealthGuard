@@ -92,9 +92,10 @@ namespace HealthGuard.Controllers
                 var diagnoses = await _mobileService.ProcessDiagnosisAsync(username, request);
                 return Ok(new { success = true, data = diagnoses });
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 string realError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                Console.WriteLine("\n[LỖI DATABASE] " + realError + "\n"); // In ra màn hình console C#
+                Console.WriteLine("\n[LỖI DATABASE] " + realError + "\n");
 
                 return StatusCode(500, new { success = false, message = "Lỗi Database: " + realError });
             }
@@ -148,7 +149,6 @@ namespace HealthGuard.Controllers
             catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); }
         }
 
-        // Thêm vào trong class MobileController
         [HttpPost("Feedback")]
         public async Task<IActionResult> SubmitFeedback([FromBody] FeedbackRequestDto request)
         {
@@ -169,6 +169,7 @@ namespace HealthGuard.Controllers
 
         // ================== CÁC API KHÔNG CẦN TOKEN (CHO MÀN HÌNH ĐĂNG NHẬP/ĐĂNG KÝ) ==================
 
+        // 👉 ĐÃ SỬA API NÀY ĐỂ TRẢ VỀ CẢ BIẾN 'otp'
         [HttpPost("SendOtp")]
         [AllowAnonymous]
         public async Task<IActionResult> SendOtp([FromBody] MobileSendOtpRequest request)
@@ -176,8 +177,11 @@ namespace HealthGuard.Controllers
             if (string.IsNullOrEmpty(request?.PhoneNumber)) return BadRequest(new { success = false, message = "Số điện thoại không hợp lệ" });
             try
             {
-                await _mobileService.SendOtpAsync(request.PhoneNumber);
-                return Ok(new { success = true, message = "Mã OTP đã được gửi" });
+                // Hứng cái OTP chuỗi bên Service truyền ra
+                string generatedOtp = await _mobileService.SendOtpAsync(request.PhoneNumber);
+
+                // Nhét OTP vào JSON gửi về Front-end
+                return Ok(new { success = true, message = "Mã OTP đã được gửi", otp = generatedOtp });
             }
             catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); }
         }
@@ -213,6 +217,7 @@ namespace HealthGuard.Controllers
             catch (InvalidOperationException ex) { return BadRequest(new { success = false, message = ex.Message }); }
             catch (Exception ex) { return StatusCode(500, new { success = false, message = "Lỗi hệ thống: " + ex.InnerException?.Message ?? ex.Message }); }
         }
+
         [HttpGet("AiKnowledge")]
         [AllowAnonymous]
         public async Task<IActionResult> GetAiKnowledge()
