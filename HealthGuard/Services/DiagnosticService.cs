@@ -1,12 +1,13 @@
-﻿using HealthGuard.Data; // Đảm bảo namespace này chứa HealthContext của ông
+﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.Entity; 
+using HealthGuard.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Services
@@ -15,7 +16,7 @@ namespace HealthGuard.Services
     {
         private readonly HealthContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
-        private const string PYTHON_API_URL = "http://localhost:5000/api/ai-chat";
+        private const string PYTHON_API_URL = "http://127.0.0.1:5000/predict";
 
         public DiagnosticService(HealthContext context, IHttpClientFactory httpClientFactory)
         {
@@ -23,82 +24,98 @@ namespace HealthGuard.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<DiagnosticResponseDto> PerformDiagnosisAsync(string username, DiagnosticRequestDto request)
+        public async Task<object> PerformDiagnosisAsync(string username, DiagnosticRequestDto request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null) throw new UnauthorizedAccessException("Không tìm thấy người dùng!");
+            string cleanUsername = username.Trim().ToLower();
 
- 
-            var session = new DiagnosticSession
-            {
-                User = user,
-                Status = "COMPLETED",
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.DiagnosticSessions.Add(session);
+            // 🔥 ĐÃ FIX: Chống lỗi Cookie bóng ma bằng cách tìm theo cả Username lẫn Email
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Username.ToLower() == cleanUsername ||
+                u.Email.ToLower() == cleanUsername);
 
-            foreach (var input in request.SelectedSymptoms)
-            {
-                var symptom = await _context.Symptoms.FindAsync(input.SymptomId);
-                if (symptom == null) throw new KeyNotFoundException($"Lỗi ID triệu chứng: {input.SymptomId}");
+            if (user == null)
+                throw new Exception($"Không tìm thấy tài khoản [{username}] trong Database! Vui lòng ấn Đăng xuất và Đăng nhập lại.");
 
-                var sessionSymptom = new SessionSymptom
-                {
-                    DiagnosticSession = session,
-                    Symptom = symptom,
-                    DurationDays = input.DurationDays,
-                    SeverityLevel = input.SeverityLevel
-                };
-                _context.SessionSymptoms.Add(sessionSymptom);
-            }
+            var pythonData = await CallPythonAiAsync(request);
 
-            var pythonResults = await CallPythonServiceAsync(request);
+            if (pythonData?.Diagnoses == null || !pythonData.Diagnoses.Any())
+                return new { status = "Hoàn tất", diagnoses = new List<PythonDiagnosis>() };
 
-            var finalResults = new List<ResultResponseDto>();
-            foreach (var pyResult in pythonResults)
-            {
-                var disease = await _context.Diseases.FirstOrDefaultAsync(d => d.DiseaseCode == pyResult.DiseaseCode);
-                if (disease == null) continue;
+            // 🔥 CHUẨN Y KHOA: Chỉ lấy các bệnh > 12%, KHÔNG ÉP TỔNG 100%
+            var matchedDiagnoses = pythonData.Diagnoses
+                .Where(d => d.Probability > 12.0)
+                .OrderByDescending(d => d.Probability)
+                .Take(5)
+                .ToList();
 
-                var result = new DiagnosisResult
-                {
-                    DiagnosticSession = session,
-                    Disease = disease,
-                    ProbabilityPercentage = pyResult.Probability
-                };
-                _context.DiagnosisResults.Add(result);
+            if (!matchedDiagnoses.Any())
+                return new { status = "Hoàn tất", diagnoses = new List<PythonDiagnosis>() };
 
-                finalResults.Add(new ResultResponseDto
-                {
-                    DiseaseName = disease.DiseaseName,
-                    ProbabilityPercentage = pyResult.Probability,
-                    TreatmentAdvice = disease.TreatmentAdvice
-                });
-            }
+            await SaveDiagnosisToDb(user, matchedDiagnoses);
 
-            await _context.SaveChangesAsync();
-
-            return new DiagnosticResponseDto
-            {
-                SessionId = session.Id,
-                Results = finalResults
-            };
+            return new { status = "Hoàn tất", diagnoses = matchedDiagnoses };
         }
 
-        private async Task<List<PythonResponseDto>> CallPythonServiceAsync(DiagnosticRequestDto request)
+        private async Task<PythonAiResponse> CallPythonAiAsync(DiagnosticRequestDto request)
         {
+            var client = _httpClientFactory.CreateClient();
+            var pythonPayload = new { selectedSymptoms = request.SelectedSymptoms.Select(s => new { symptomId = s.SymptomId }).ToList() };
+            var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var jsonContent = new StringContent(JsonSerializer.Serialize(pythonPayload, jsonOptions), Encoding.UTF8, "application/json");
+
+            var response = await client.PostAsync(PYTHON_API_URL, jsonContent);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorTxt = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Lỗi Python AI: {errorTxt}");
+            }
+
+            var resultString = await response.Content.ReadAsStringAsync();
             try
             {
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync(PYTHON_API_URL, request);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<PythonResponseDto[]>();
-                return new List<PythonResponseDto>(result ?? Array.Empty<PythonResponseDto>());
+                return JsonSerializer.Deserialize<PythonAiResponse>(resultString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
-                throw new Exception($"Lỗi AI: {ex.Message}");
+                throw new Exception($"Lỗi đọc JSON từ Python: {ex.Message}");
             }
         }
+
+        private async Task SaveDiagnosisToDb(User user, List<PythonDiagnosis> diagnoses)
+        {
+            var newSession = new DiagnosticSession { User = user, Status = "Hoàn tất", CreatedAt = DateTime.Now };
+            _context.DiagnosticSessions.Add(newSession);
+            await _context.SaveChangesAsync();
+
+            foreach (var diag in diagnoses)
+            {
+                var disease = await _context.Diseases.FirstOrDefaultAsync(d => d.DiseaseName == diag.DiseaseName);
+
+                if (disease == null)
+                {
+                    disease = new Disease
+                    {
+                        DiseaseCode = "AI-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper(),
+                        DiseaseName = diag.DiseaseName,
+                        Description = diag.Description ?? "Đang cập nhật",
+                        TreatmentAdvice = diag.Treatment ?? "Đang cập nhật"
+                    };
+                    _context.Diseases.Add(disease);
+                    await _context.SaveChangesAsync();
+                }
+
+                _context.DiagnosisResults.Add(new DiagnosisResult
+                {
+                    SessionId = newSession.Id,
+                    DiseaseId = disease.Id,
+                    ProbabilityPercentage = diag.Probability
+                });
+            }
+            await _context.SaveChangesAsync();
+        }
     }
+
+    public class PythonAiResponse { public string Status { get; set; } public List<PythonDiagnosis> Diagnoses { get; set; } }
+    public class PythonDiagnosis { public string DiseaseName { get; set; } public double Probability { get; set; } public string Description { get; set; } public string Treatment { get; set; } }
 }

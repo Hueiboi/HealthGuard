@@ -1,16 +1,13 @@
 ﻿using HealthGuard.Data;
 using HealthGuard.Models.Dto;
-using HealthGuard.Models.Entity;
 using HealthGuard.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
+using System.Collections.Generic; // 🔥 THÊM ĐỂ KHÔNG BỊ LỖI LIST<LONG> KHI XÓA
 using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace HealthGuard.Controllers
@@ -27,28 +24,43 @@ namespace HealthGuard.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public IActionResult Index() => View();
+        [HttpGet] public IActionResult Index() => View();
+        [HttpGet] public IActionResult Review() => View();
 
+        // 🔥 ĐÃ FIX: Hàm Details nhận tham số ID và lấy dữ liệu chi tiết của phiên chẩn đoán
         [HttpGet]
-        public IActionResult Details() => View();
+        public async Task<IActionResult> Details(long id)
+        {
+            string username = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
-        [HttpGet]
-        public IActionResult Review() => View();
+            string cleanUsername = username.Trim().ToLower();
+
+            // Tìm đúng phiên chẩn đoán theo ID và thuộc về đúng User (Bảo mật)
+            var session = await _context.DiagnosticSessions
+                .Include(s => s.DiagnosisResults).ThenInclude(dr => dr.Disease)
+                .FirstOrDefaultAsync(s => s.Id == id &&
+                    (s.User.Username.ToLower() == cleanUsername || s.User.Email.ToLower() == cleanUsername));
+
+            if (session == null)
+                return NotFound("Không tìm thấy kết quả chẩn đoán này hoặc bạn không có quyền xem.");
+
+            // Truyền dữ liệu sang View Details.cshtml
+            return View(session);
+        }
 
         [HttpGet]
         public async Task<IActionResult> History()
         {
-            string username = User.Identity?.Name;
+            string username = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
             if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Auth");
 
+            string cleanUsername = username.Trim().ToLower();
+
             var historyData = await _context.DiagnosticSessions
-                .Include(s => s.User)
-                .Include(s => s.DiagnosisResults)
-                    .ThenInclude(dr => dr.Disease)
-                .Where(s => s.User.Username == username)
-                .OrderByDescending(s => s.CreatedAt)
-                .ToListAsync();
+                .Include(s => s.DiagnosisResults).ThenInclude(dr => dr.Disease)
+                .Where(s => s.User.Username.ToLower() == cleanUsername || s.User.Email.ToLower() == cleanUsername)
+                .OrderByDescending(s => s.CreatedAt).ToListAsync();
 
             return View(historyData);
         }
@@ -56,111 +68,111 @@ namespace HealthGuard.Controllers
         [HttpGet("api/patient/diagnose/symptoms")]
         public async Task<IActionResult> SelectSymptoms()
         {
-            var symptoms = await _context.Symptoms
-                .Select(s => new SymptomDto { Id = s.Id, SymptomName = s.SymptomName })
-                .ToListAsync();
+            var symptoms = await _context.Symptoms.Select(s => new SymptomDto { Id = s.Id, SymptomName = s.SymptomName }).ToListAsync();
             return Ok(symptoms);
         }
 
         [HttpPost("api/patient/diagnose")]
-        public async Task<IActionResult> RunDiagnosisAsync(
-             [FromBody] DiagnosticRequestDto request,
-             [FromServices] IHttpClientFactory httpClientFactory)
+        public async Task<IActionResult> RunDiagnosisAsync([FromBody] DiagnosticRequestDto request)
         {
-            if (request == null || request.SelectedSymptoms == null || request.SelectedSymptoms.Count == 0)
+            if (request?.SelectedSymptoms == null || !request.SelectedSymptoms.Any())
                 return BadRequest(new { message = "Vui lòng cung cấp ít nhất một triệu chứng." });
 
             try
             {
-                var pythonPayload = new { selectedSymptoms = request.SelectedSymptoms.Select(s => new { symptomId = s.SymptomId }).ToList() };
-                var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                var jsonContent = new StringContent(JsonSerializer.Serialize(pythonPayload, jsonOptions), Encoding.UTF8, "application/json");
+                string username = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
 
-                var client = httpClientFactory.CreateClient();
-                var response = await client.PostAsync("http://127.0.0.1:5000/predict", jsonContent);
+                if (string.IsNullOrEmpty(username))
+                    return StatusCode(401, new { message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn." });
 
-                if (!response.IsSuccessStatusCode)
-                    return StatusCode(500, new { message = "Lỗi khi gọi mô hình AI Python." });
-
-                var pythonResultString = await response.Content.ReadAsStringAsync();
-
- 
-                try
-                {
-                    var pythonData = JsonSerializer.Deserialize<PythonAiResponse>(pythonResultString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    string username = User.Identity?.Name;
-                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-
-                    if (user != null && pythonData?.Diagnoses != null && pythonData.Diagnoses.Count > 0)
-                    {
-                        var newSession = new DiagnosticSession { User = user, Status = "Hoàn tất", CreatedAt = DateTime.Now };
-                        _context.DiagnosticSessions.Add(newSession);
-                        await _context.SaveChangesAsync(); 
-
-                        var aiResults = new List<DiagnosisResult>();
-
-                        foreach (var diag in pythonData.Diagnoses)
-                        {
-                            if (string.IsNullOrEmpty(diag.DiseaseName)) continue;
-
-                            var disease = await _context.Diseases.FirstOrDefaultAsync(d => d.DiseaseName == diag.DiseaseName);
-
-                            if (disease == null)
-                            {
-                                string generatedCode = "AI-" + Guid.NewGuid().ToString().Substring(0, 6).ToUpper();
-                                disease = new Disease
-                                {
-                                    DiseaseCode = generatedCode,
-                                    DiseaseName = diag.DiseaseName,
-                                    Description = string.IsNullOrEmpty(diag.Description) ? "Đang cập nhật" :
-                                                  (diag.Description.Length > 490 ? diag.Description.Substring(0, 490) + "..." : diag.Description),
-                                    TreatmentAdvice = string.IsNullOrEmpty(diag.Treatment) ? "Đang cập nhật" :
-                                                  (diag.Treatment.Length > 490 ? diag.Treatment.Substring(0, 490) + "..." : diag.Treatment)
-                                };
-
-                                _context.Diseases.Add(disease);
-                                await _context.SaveChangesAsync(); 
-                            }
-
-                            aiResults.Add(new DiagnosisResult
-                            {
-                                SessionId = newSession.Id, 
-                                DiseaseId = disease.Id,              
-                                ProbabilityPercentage = diag.Probability
-                            });
-                        }
-
-                        if (aiResults.Count > 0)
-                        {
-                            _context.DiagnosisResults.AddRange(aiResults);
-                            await _context.SaveChangesAsync(); // 
-                        }
-                    }
-                }
-                catch (Exception dbEx)
-                {
-                    Console.WriteLine("\n LỖI LƯU DB: " + dbEx.Message + (dbEx.InnerException != null ? " ---> " + dbEx.InnerException.Message : "") + "\n");
-                }
-
-                return Content(pythonResultString, "application/json");
+                var result = await _diagnosticService.PerformDiagnosisAsync(username, request);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi kết nối AI Server: " + ex.Message });
+                if (ex.Message.Contains("Không tìm thấy tài khoản"))
+                {
+                    return StatusCode(401, new { message = ex.Message });
+                }
+
+                return StatusCode(500, new { message = ex.Message });
             }
         }
-    }
-    public class PythonAiResponse
-    {
-        public string Status { get; set; }
-        public List<PythonDiagnosis> Diagnoses { get; set; }
-    }
 
-    public class PythonDiagnosis
-    {
-        public string DiseaseName { get; set; }
-        public double Probability { get; set; }
-        public string Description { get; set; }
-        public string Treatment { get; set; }
+        [HttpPost("api/patient/diagnose/delete-selected")]
+        public async Task<IActionResult> DeleteSelectedHistory([FromBody] List<long> sessionIds)
+        {
+            try
+            {
+                string username = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
+                if (string.IsNullOrEmpty(username)) return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
+                string cleanUsername = username.Trim().ToLower();
+
+                var sessionsToDelete = await _context.DiagnosticSessions
+                    .Where(s => sessionIds.Contains(s.Id) &&
+                           (s.User.Username.ToLower() == cleanUsername || s.User.Email.ToLower() == cleanUsername))
+                    .ToListAsync();
+
+                if (sessionsToDelete.Any())
+                {
+                    _context.DiagnosticSessions.RemoveRange(sessionsToDelete);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { success = true, deletedCount = sessionsToDelete.Count });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("api/patient/diagnose/delete-all")]
+        public async Task<IActionResult> DeleteAllHistory()
+        {
+            try
+            {
+                string username = User.Identity?.Name ?? User.FindFirstValue(ClaimTypes.Name);
+                if (string.IsNullOrEmpty(username)) return Unauthorized(new { message = "Vui lòng đăng nhập." });
+
+                string cleanUsername = username.Trim().ToLower();
+
+                var allSessions = await _context.DiagnosticSessions
+                    .Where(s => s.User.Username.ToLower() == cleanUsername || s.User.Email.ToLower() == cleanUsername)
+                    .ToListAsync();
+
+                if (allSessions.Any())
+                {
+                    _context.DiagnosticSessions.RemoveRange(allSessions);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("api/patient/diagnose/toggle-save/{id}")]
+        public async Task<IActionResult> ToggleSaveHistory(long id)
+        {
+            try
+            {
+                var session = await _context.DiagnosticSessions.FindAsync(id);
+                if (session == null) return NotFound(new { message = "Không tìm thấy phiên chẩn đoán." });
+
+                session.IsSaved = !session.IsSaved;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, isSaved = session.IsSaved });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

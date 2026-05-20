@@ -1,0 +1,159 @@
+﻿@model IEnumerable<HealthGuard.Models.Entity.Disease>
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .page-container { max-width: 1200px; margin: 0 auto; }
+        .handbook-header { margin-bottom: 40px; text-align: center; background: white; padding: 40px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .page-title { font-size: 2.3rem; font-weight: 800; color: #1e293b; margin-bottom: 10px; letter-spacing: -1px; }
+        .page-desc { color: #64748b; font-size: 1.05rem; max-width: 600px; margin: 0 auto 25px; line-height: 1.6; }
+        
+        /* Thanh tìm kiếm */
+        .search-box { max-width: 550px; margin: 0 auto; position: relative; }
+        .search-input { padding: 14px 20px 14px 50px; border-radius: 30px; border: 1px solid #cbd5e1; width: 100%; font-size: 0.95rem; transition: 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .search-input:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); outline: none; }
+        .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1.2rem; }
+
+        /* Lưới hiển thị danh sách bệnh */
+        .disease-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; margin-top: 10px; }
+        .disease-card { background: white; border-radius: 20px; padding: 25px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+        .disease-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.05); border-color: #bfdbfe; }
+        
+        .disease-code { background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; width: fit-content; margin-bottom: 15px; letter-spacing: 0.5px; }
+        .disease-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 10px; line-height: 1.4; }
+        .disease-snippet { color: #64748b; font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .btn-view-details { margin-top: auto; background: #f1f5f9; color: #334155; border: none; width: 100%; padding: 11px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; text-align: center; }
+        .btn-view-details:hover { background: #e2e8f0; color: #0f172a; }
+
+        /* Custom Modal phong cách y khoa */
+        .modal-custom .modal-content { border-radius: 24px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); padding: 15px; }
+        .modal-custom .modal-header { border-bottom: none; padding-bottom: 5px; }
+        .modal-custom .modal-title { font-weight: 800; color: #0f172a; font-size: 1.6rem; }
+        .modal-custom .modal-body { padding-top: 10px; }
+        .modal-section-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; margin-top: 20px; display: flex; align-items: center; gap: 6px; }
+        .modal-text { color: #334155; font-size: 0.95rem; line-height: 1.6; }
+        .modal-advice-box { background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 18px; border-radius: 0 16px 16px 0; margin-top: 15px; }
+        .modal-advice-title { font-weight: 700; color: #14532d; font-size: 0.9rem; margin-bottom: 6px; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+    </style>
+}
+
+<div class="page-container">
+    <div class="handbook-header">
+        <h1 class="page-title">Cẩm nang y khoa số</h1>
+        <p class="page-desc">Tra cứu chủ động thông tin chi tiết về các loại bệnh lý, triệu chứng đi kèm và các giải pháp chăm sóc sức khỏe chủ động độc quyền từ HealthGuard.</p>
+        
+        <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="handbookSearch" class="search-input" placeholder="Nhập tên bệnh hoặc từ khóa để tra cứu nhanh..." onkeyup="filterHandbook()">
+        </div>
+    </div>
+
+    <div class="disease-grid" id="diseaseGrid">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var disease in Model)
+            {
+                <div class="disease-card card-item" 
+                     data-name="@disease.DiseaseName?.ToLower()" 
+                     data-code="@disease.DiseaseCode"
+                     data-desc="@disease.Description" 
+                     data-advice="@disease.TreatmentAdvice">
+                     
+                    <span class="disease-code">@disease.DiseaseCode</span>
+                    <h3 class="disease-title">@disease.DiseaseName</h3>
+                    <p class="disease-snippet">@disease.Description</p>
+                    
+                    <button class="btn-view-details" onclick="openHandbookModal(this)">
+                        Tìm hiểu thêm <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="grid-column: span 3; text-align: center; padding: 50px; color: #64748b;">
+                <i class="bi bi-folder-x" style="font-size: 3rem; color: #cbd5e1;"></i>
+                <p class="mt-3">Hiện chưa có dữ liệu bệnh lý trong cẩm nang số.</p>
+            </div>
+        }
+    </div>
+
+    <div id="noResults" class="text-center p-5 bg-white rounded-4 border mt-4 style="display: none !important;">
+        <i class="bi bi-search-heart text-muted" style="font-size: 2.5rem;"></i>
+        <p class="mt-3 text-muted fw-bold">Không tìm thấy bệnh lý nào khớp với từ khóa của bạn.</p>
+    </div>
+</div>
+
+<div class="modal fade modal-custom" id="handbookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalCode" class="disease-code mb-0">AI-CODE</span>
+                <button type="text" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h2 class="modal-title" id="modalTitle">Tên bệnh lý lý thuyết</h2>
+                
+                <div class="modal-section-title"><i class="bi bi-file-earmark-text"></i> Tổng quan bệnh học</div>
+                <p class="modal-text" id="modalDesc">Nội dung mô tả chi tiết của bệnh...</p>
+                
+                <div class="modal-advice-box">
+                    <div class="modal-advice-title"><i class="bi bi-heart-pulse-fill"></i> Hướng dẫn điều trị & Phòng ngừa</div>
+                    <p class="modal-text text-success mb-0" id="modalAdvice">Lời khuyên điều trị chi tiết...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterHandbook() {
+            let input = document.getElementById('handbookSearch').value.toLowerCase().trim();
+            let cards = document.querySelectorAll('.card-item');
+            let grid = document.getElementById('diseaseGrid');
+            let noResults = document.getElementById('noResults');
+            let matchCount = 0;
+
+            cards.forEach(card => {
+                let diseaseName = card.getAttribute('data-name');
+                let diseaseDesc = card.getAttribute('data-desc').toLowerCase();
+
+                if (diseaseName.includes(input) || diseaseDesc.includes(input)) {
+                    card.style.setProperty('display', 'flex', 'important');
+                    matchCount++;
+                } else {
+                    card.style.setProperty('display', 'none', 'important');
+                }
+            });
+
+            if (matchCount === 0 && input !== "") {
+                grid.style.setProperty('display', 'none', 'important');
+                noResults.style.setProperty('display', 'block', 'important');
+            } else {
+                grid.style.setProperty('display', 'grid', 'important');
+                noResults.style.setProperty('display', 'none', 'important');
+            }
+        }
+
+        function openHandbookModal(buttonElement) {
+            let card = buttonElement.closest('.card-item');
+            
+            let name = card.querySelector('.disease-title').innerText;
+            let code = card.getAttribute('data-code');
+            let desc = card.getAttribute('data-desc');
+            let advice = card.getAttribute('data-advice');
+
+            document.getElementById('modalTitle').innerText = name;
+            document.getElementById('modalCode').innerText = code;
+            document.getElementById('modalDesc').innerText = desc;
+            document.getElementById('modalAdvice').innerText = advice;
+
+            var myModal = new bootstrap.Modal(document.getElementById('handbookModal'));
+            myModal.show();
+        }
+    </script>
+}

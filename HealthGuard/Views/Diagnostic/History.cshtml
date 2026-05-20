@@ -1,38 +1,14 @@
-﻿@{
+﻿@model IEnumerable<HealthGuard.Models.Entity.DiagnosticSession>
+@{
     ViewData["Title"] = "Lịch sử Chẩn đoán - HealthGuard";
-    Layout = null; 
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-@model IEnumerable<HealthGuard.Models.Entity.DiagnosticSession>
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
+@section Styles {
     <style>
-        :root {
-            --primary-blue: #2563eb;
-            --bg-color: #f8fafc;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-light: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding-bottom: 60px;
-        }
-
         .page-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px 40px;
         }
 
         .header-label {
@@ -50,7 +26,7 @@
         .page-title {
             font-size: 2.5rem;
             font-weight: 800;
-            color: var(--text-main);
+            color: var(--text-dark);
             margin-bottom: 15px;
             letter-spacing: -1px;
         }
@@ -77,12 +53,11 @@
             background: white;
             border-radius: 24px;
             padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.02);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
@@ -95,6 +70,7 @@
             background: linear-gradient(to top, rgba(15,23,42,0.9), rgba(15,23,42,0.4)), url('https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&q=80&w=800') center/cover;
             color: white;
             justify-content: flex-end;
+            cursor: pointer;
         }
 
             .card-image-bg .page-title, .card-image-bg .text-muted {
@@ -119,6 +95,7 @@
             font-size: 1.4rem;
             font-weight: 800;
             margin-bottom: 5px;
+            color: var(--text-dark);
         }
 
         .doctor-info {
@@ -127,7 +104,6 @@
             margin-bottom: 25px;
         }
 
-        /* DANH SÁCH CHI TIẾT TRONG CARD */
         .detail-item {
             display: flex;
             align-items: flex-start;
@@ -151,7 +127,7 @@
         .detail-content strong {
             display: block;
             font-size: 0.9rem;
-            color: var(--text-main);
+            color: var(--text-dark);
         }
 
         .detail-content span {
@@ -159,11 +135,10 @@
             color: var(--text-muted);
         }
 
-        /* Nút hành động */
         .btn-link-custom {
             margin-top: auto;
             text-align: right;
-            color: var(--primary-blue);
+            color: var(--primary-color);
             font-weight: 700;
             text-decoration: none;
             font-size: 0.95rem;
@@ -172,7 +147,7 @@
         .btn-block-custom {
             margin-top: auto;
             background: #f1f5f9;
-            color: var(--text-main);
+            color: var(--text-dark);
             border: none;
             width: 100%;
             padding: 12px;
@@ -188,8 +163,8 @@
 
         .prob-badge {
             position: absolute;
-            top: 30px;
-            right: 30px;
+            top: 20px;
+            right: 90px;
             text-align: center;
         }
 
@@ -203,7 +178,6 @@
 
             .prob-badge strong {
                 font-size: 1.2rem;
-                color: #0284c7;
                 font-weight: 800;
             }
 
@@ -215,12 +189,25 @@
             margin-right: 8px;
         }
 
-        .dot-normal {
-            background-color: #2563eb;
+        .bookmark-btn {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #cbd5e1;
         }
 
-        .dot-warning {
-            background-color: #dc2626;
+            .bookmark-btn.saved {
+                color: #f59e0b;
+            }
+
+            .bookmark-btn:hover {
+                transform: scale(1.1);
+            }
+
+        .d-none-pagination {
+            display: none !important;
         }
 
         @@media (max-width: 992px) {
@@ -233,141 +220,243 @@
             }
         }
     </style>
-</head>
-<body>
+}
 
-    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-bottom: 1px solid #e2e8f0; margin-bottom: 30px;">
-        <a asp-controller="Home" asp-action="Index" style="font-size: 1.6rem; font-weight: 800; color: #2563eb; text-decoration: none; letter-spacing: -0.5px;">
-            HealthGuard
-        </a>
-        <div style="flex: 1; max-width: 400px; margin: 0 20px;">
-            <div style="background-color: #f4f6f8; border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; color: #64748b;">
-                <i class="bi bi-search me-2"></i>
-                <input type="text" placeholder="Tìm kiếm hồ sơ, thuốc..." style="border: none; background: transparent; width: 100%; outline: none; color: #334155; font-size: 0.95rem;">
-            </div>
+<div class="page-container">
+    <div class="header-label"><i class="bi bi-clock-history"></i> HỒ SƠ BỆNH NHÂN</div>
+    <h1 class="page-title">Lịch sử chẩn đoán</h1>
+    <p class="page-desc">Tổng quan toàn diện về các đánh giá y tế trong quá khứ, kết quả phân tích AI và các lời khuyên chuyên môn của bạn.</p>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 p-3" style="background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="selectAllHistory" style="cursor: pointer; width: 1.2rem; height: 1.2rem;">
+            <label class="form-check-label fw-bold text-dark ms-2" for="selectAllHistory" style="cursor: pointer; margin-top: 2px;">
+                Chọn tất cả
+            </label>
         </div>
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <a asp-controller="Diagnostic" asp-action="Index" style="background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37,99,235,0.2);">
-                <i class="bi bi-stars"></i> AI Diagnosis Wizard
-            </a>
-            <i class="bi bi-bell" style="font-size: 1.2rem; color: #64748b; cursor: pointer;"></i>
-            @if (User.Identity != null && User.Identity.IsAuthenticated)
+        <div class="d-flex gap-2">
+            <button id="btnDeleteSelected" class="btn btn-outline-danger fw-bold rounded-pill px-4" disabled onclick="deleteSelected()">
+                <i class="bi bi-trash3 me-2"></i> Xóa mục đã chọn
+            </button>
+            <button class="btn btn-danger fw-bold rounded-pill px-4" onclick="deleteAll()">
+                <i class="bi bi-exclamation-triangle me-2"></i> Xóa tất cả
+            </button>
+        </div>
+    </div>
+
+    <div class="history-grid" id="historyContainer">
+        @{
+            int index = 0;
+        }
+        @if (Model != null && Model.Any())
+        {
+            foreach (var session in Model)
             {
-                <div class="dropdown">
-                    <div class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; border-radius: 50%; background-color: #20c997; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none;">
-                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
+                var topDisease = session.DiagnosisResults.OrderByDescending(r => r.ProbabilityPercentage).FirstOrDefault();
+                if (topDisease == null || topDisease.Disease == null) continue;
+
+                string probLabel = topDisease.ProbabilityPercentage >= 80 ? "Cao" : (topDisease.ProbabilityPercentage >= 50 ? "Trung bình" : "Thấp");
+                string probColor = probLabel == "Cao" ? "#dc2626" : (probLabel == "Trung bình" ? "#d97706" : "#0284c7");
+
+                string iconClass = session.IsSaved ? "bi-bookmark-star-fill" : "bi-bookmark-plus";
+                string btnClass = session.IsSaved ? "saved" : "";
+
+                <div class="history-card diag-record" data-issaved="@session.IsSaved.ToString().ToLower()">
+
+                    <button class="position-absolute bookmark-btn @btnClass" style="top: 15px; right: 50px; z-index: 10;" onclick="toggleSave(@session.Id, this)" title="Lưu vào kho lưu trữ">
+                        <i class="bi @iconClass"></i>
+                    </button>
+
+                    <div class="form-check position-absolute" style="top: 20px; right: 20px; z-index: 10;">
+                        <input class="form-check-input history-checkbox" type="checkbox" value="@session.Id" onchange="toggleDeleteButton()" style="cursor: pointer; width: 1.3rem; height: 1.3rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
-                        <li class="px-3 py-2 border-bottom mb-1"><p class="mb-0 fw-bold text-dark">@User.Identity.Name</p><small class="text-muted">Bệnh nhân</small></li>
-                        <li><a class="dropdown-item py-2" asp-controller="Patient" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                        <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
-                    </ul>
-                </div>
-            }
-            else
-            {
-                <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #94a3b8; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
-            }
-        </div>
-    </nav>
 
-    <main class="page-container">
+                    <div class="date-pill"><i class="bi bi-calendar3"></i> @session.CreatedAt.ToString("dd/MM/yyyy")</div>
 
-        <div class="header-label"><i class="bi bi-clock-history"></i> PATIENT RECORDS</div>
-        <h1 class="page-title">Diagnosis History</h1>
-        <p class="page-desc">Tổng quan toàn diện về các đánh giá y tế trong quá khứ, kết quả hình ảnh và các buổi tư vấn chuyên khoa của bạn.</p>
-
-        <div class="history-grid">
-
-            @{ int index = 0; }
-            @if (Model != null && Model.Any())
-            {
-                foreach (var session in Model)
-                {
-                    // Lấy ra bệnh có tỉ lệ cao nhất trong lần khám này
-                    var topDisease = session.DiagnosisResults.OrderByDescending(r => r.ProbabilityPercentage).FirstOrDefault();
-                    if (topDisease == null || topDisease.Disease == null) continue;
-
-                    // Tính toán nhãn rủi ro
-                    string probLabel = topDisease.ProbabilityPercentage >= 80 ? "High" : (topDisease.ProbabilityPercentage >= 50 ? "Medium" : "Low");
-                    string probColor = probLabel == "High" ? "#dc2626" : (probLabel == "Medium" ? "#d97706" : "#0284c7");
-
-                    // CARD 1: Luôn cho cái mới nhất (index == 0) to ra (card-wide)
-                    if (index == 0)
+                    @if (index == 0)
                     {
-                        <div class="history-card card-wide" style="border-left: 4px solid #3b82f6;">
-                            <div class="date-pill"><i class="bi bi-calendar3"></i> @session.CreatedAt.ToString("MMM dd, yyyy").ToUpper()</div>
-                            <div class="prob-badge">
-                                <span>Probability</span>
-                                <strong style="color: @probColor">@probLabel</strong>
-                            </div>
-                            
-                            <h2 class="card-title">@topDisease.Disease.DiseaseName</h2>
-                            <div class="doctor-info">AI Diagnostic System &bull; Logistic Regression Model</div>
-
-                            <div class="detail-item">
-                                <div class="detail-icon"><i class="bi bi-activity"></i></div>
-                                <div class="detail-content">
-                                    <strong>Primary Finding</strong>
-                                    <span>Độ tin cậy của thuật toán đạt @topDisease.ProbabilityPercentage%.</span>
-                                </div>
-                            </div>
-                            <div class="detail-item">
-                                <div class="detail-icon"><i class="bi bi-clipboard2-pulse"></i></div>
-                                <div class="detail-content">
-                                    <strong>Action Required</strong>
-                                    <span>@topDisease.Disease.Description</span>
-                                </div>
-                            </div>
-
-                            <a href="#" class="btn-link-custom">View Full Report <i class="bi bi-arrow-right"></i></a>
+                        <div class="prob-badge">
+                            <span>Xác suất</span>
+                            <strong style="color: @probColor">@probLabel</strong>
                         </div>
+                    }
+
+                    <h2 class="card-title" style="@(index != 0 ? "font-size: 1.2rem;" : "")">@topDisease.Disease.DiseaseName</h2>
+                    <div class="doctor-info">Hệ thống AI HealthGuard @(index == 0 ? "• Logistic Regression Model" : "")</div>
+
+                    @if (index == 0)
+                    {
+                        <div class="detail-item">
+                            <div class="detail-icon"><i class="bi bi-activity"></i></div>
+                            <div class="detail-content">
+                                <strong>Phân tích chính</strong>
+                                <span>Độ tin cậy của thuật toán đạt @topDisease.ProbabilityPercentage%.</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-icon"><i class="bi bi-clipboard2-pulse"></i></div>
+                            <div class="detail-content">
+                                <strong>Khuyến nghị hành động</strong>
+                                <span>@topDisease.Disease.Description</span>
+                            </div>
+                        </div>
+                        <a href="@Url.Action("Details", "Diagnostic", new { id = session.Id })" class="btn-link-custom">Xem chi tiết <i class="bi bi-arrow-right"></i></a>
                     }
                     else
                     {
-                        <div class="history-card">
-                            <div class="date-pill"><i class="bi bi-calendar3"></i> @session.CreatedAt.ToString("MMM dd, yyyy").ToUpper()</div>
-                            <h2 class="card-title" style="font-size: 1.2rem;">@topDisease.Disease.DiseaseName</h2>
-                            <div class="doctor-info">HealthGuard AI</div>
-
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
-                                <span style="color: var(--text-muted); font-size: 0.95rem;">Algorithm Match</span>
-                                <strong style="color: @probColor">@topDisease.ProbabilityPercentage%</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
-                                <span style="color: var(--text-muted); font-size: 0.95rem;">Risk Level</span>
-                                <strong><span class="status-dot" style="background-color: @probColor;"></span>@probLabel</strong>
-                            </div>
-
-                            <button class="btn-block-custom">Details <i class="bi bi-chevron-right" style="font-size: 0.8rem;"></i></button>
+                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 12px;">
+                            <span style="color: var(--text-muted); font-size: 0.95rem;">Độ trùng khớp</span>
+                            <strong style="color: @probColor">@topDisease.ProbabilityPercentage%</strong>
                         </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+                            <span style="color: var(--text-muted); font-size: 0.95rem;">Mức độ rủi ro</span>
+                            <strong><span class="status-dot" style="background-color: @probColor;"></span>@probLabel</strong>
+                        </div>
+                        <a href="@Url.Action("Details", "Diagnostic", new { id = session.Id })" class="btn-block-custom" style="display: block; text-decoration: none; text-align: center;">
+                            Xem chi tiết <i class="bi bi-chevron-right" style="font-size: 0.8rem;"></i>
+                        </a>
                     }
-                    index++;
-                }
-            }
-            else
-            {
-                <div style="grid-column: span 3; text-align: center; padding: 50px; color: #64748b;">
-                    <i class="bi bi-folder-x" style="font-size: 3rem; color: #cbd5e1;"></i>
-                    <p class="mt-3">Bạn chưa có lịch sử chẩn đoán nào.</p>
                 </div>
+                index++;
+            }
+        }
+        else
+        {
+            <div style="grid-column: span 3; text-align: center; padding: 50px; color: #64748b;" class="no-data-msg">
+                <i class="bi bi-folder-x" style="font-size: 3rem; color: #cbd5e1;"></i>
+                <p class="mt-3">Bạn chưa có lịch sử chẩn đoán nào.</p>
+            </div>
+        }
+
+        <div class="history-card card-image-bg" id="btnToggleArchive" onclick="toggleArchiveView()">
+            <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px;"><i class="bi bi-layers"></i> KHO LƯU TRỮ</div>
+            <h2 class="card-title" style="color: white; font-size: 1.6rem;" id="archiveTitle">Hồ Sơ Đã Lưu</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 20px;" id="archiveDesc">Xem lại các kết quả chẩn đoán quan trọng mà bạn đã đánh dấu.</p>
+            <a href="javascript:void(0)" style="color: white; font-weight: 700; text-decoration: none;" id="archiveActionText">Mở kho lưu trữ <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;" id="loadMoreContainer">
+        <button id="btnLoadMore" onclick="loadMoreRecords()" style="background: #f1f5f9; color: var(--text-dark); border: none; padding: 12px 30px; border-radius: 30px; font-weight: 700; transition: 0.2s;">
+            <i class="bi bi-arrow-clockwise me-2"></i> Tải thêm lịch sử
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ======= LOGIC TẢI THÊM (PHÂN TRANG TĨNH JS) =======
+        const ITEMS_PER_PAGE = 6;
+        let currentIndex = ITEMS_PER_PAGE;
+        let isArchiveMode = false;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            applyPagination();
+        });
+
+        function applyPagination() {
+            let allCards = document.querySelectorAll('.diag-record');
+            let visibleCount = 0;
+
+            allCards.forEach((card, index) => {
+                if (isArchiveMode && card.getAttribute('data-issaved') === "false") {
+                    card.classList.add('d-none-pagination');
+                    return;
+                }
+
+                if (visibleCount < currentIndex) {
+                    card.classList.remove('d-none-pagination');
+                } else {
+                    card.classList.add('d-none-pagination');
+                }
+                visibleCount++;
+            });
+
+            if (visibleCount <= currentIndex) {
+                document.getElementById('loadMoreContainer').style.display = 'none';
+            } else {
+                document.getElementById('loadMoreContainer').style.display = 'block';
+            }
+        }
+
+        function loadMoreRecords() {
+            currentIndex += ITEMS_PER_PAGE;
+            applyPagination();
+        }
+
+        // ======= LOGIC LỌC KHO LƯU TRỮ =======
+        function toggleArchiveView() {
+            isArchiveMode = !isArchiveMode;
+            currentIndex = ITEMS_PER_PAGE;
+
+            let cardBg = document.getElementById('btnToggleArchive');
+            if (isArchiveMode) {
+                cardBg.style.border = "4px solid #f59e0b";
+                document.getElementById('archiveTitle').innerText = "Đang xem kho";
+                document.getElementById('archiveActionText').innerHTML = '<i class="bi bi-arrow-left"></i> Quay lại tất cả';
+            } else {
+                cardBg.style.border = "none";
+                document.getElementById('archiveTitle').innerText = "Hồ Sơ Đã Lưu";
+                document.getElementById('archiveActionText').innerHTML = 'Mở kho lưu trữ <i class="bi bi-arrow-right"></i>';
             }
 
-            <div class="history-card card-image-bg">
-                <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 5px;"><i class="bi bi-layers"></i> IMAGING ARCHIVE</div>
-                <h2 class="card-title" style="color: white; font-size: 1.6rem;">Radiology Reports</h2>
-                <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 20px;">Access all historical X-Rays, MRIs, and CT Scans.</p>
-                <a href="#" style="color: white; font-weight: 700; text-decoration: none;">Browse Archive <i class="bi bi-arrow-right"></i></a>
-            </div>
+            applyPagination();
+        }
 
-        </div>
+        // ======= LOGIC GỌI API LƯU/GHIM KẾT QUẢ =======
+        async function toggleSave(id, btnElement) {
+            try {
+                let response = await fetch(`@Url.Content("~/api/patient/diagnose/toggle-save/")${id}`, { method: 'POST' });
+                if (response.ok) {
+                    let data = await response.json();
+                    let icon = btnElement.querySelector('i');
+                    let card = btnElement.closest('.diag-record');
 
-        <div style="text-align: center; margin-top: 40px;">
-            <button style="background: #f1f5f9; color: var(--text-main); border: none; padding: 12px 30px; border-radius: 30px; font-weight: 700; transition: 0.2s;"><i class="bi bi-arrow-clockwise me-2"></i> Load Older Records</button>
-        </div>
+                    if (data.isSaved) {
+                        icon.classList.remove('bi-bookmark-plus');
+                        icon.classList.add('bi-bookmark-star-fill');
+                        btnElement.classList.add('saved');
+                        card.setAttribute('data-issaved', 'true');
+                    } else {
+                        icon.classList.remove('bi-bookmark-star-fill');
+                        icon.classList.add('bi-bookmark-plus');
+                        btnElement.classList.remove('saved');
+                        card.setAttribute('data-issaved', 'false');
 
-    </main>
+                        if (isArchiveMode) applyPagination();
+                    }
+                }
+            } catch (error) { console.error("Lỗi:", error); }
+        }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        // ======= LOGIC XÓA =======
+        document.getElementById('selectAllHistory').addEventListener('change', function() {
+            let checkboxes = document.querySelectorAll('.history-checkbox:not(.d-none-pagination .history-checkbox)');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+            toggleDeleteButton();
+        });
+
+        function toggleDeleteButton() {
+            let selectedCount = document.querySelectorAll('.history-checkbox:checked').length;
+            document.getElementById('btnDeleteSelected').disabled = selectedCount === 0;
+            let allVisible = document.querySelectorAll('.history-checkbox:not(.d-none-pagination .history-checkbox)').length;
+            if (allVisible > 0) document.getElementById('selectAllHistory').checked = (selectedCount === allVisible);
+        }
+
+        async function deleteSelected() {
+            let selectedIds = Array.from(document.querySelectorAll('.history-checkbox:checked')).map(cb => parseInt(cb.value));
+            if (selectedIds.length === 0) return;
+            if (confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} mục đã chọn không?`)) {
+                let response = await fetch('@Url.Content("~/api/patient/diagnose/delete-selected")', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(selectedIds) });
+                if (response.ok) location.reload();
+            }
+        }
+
+        async function deleteAll() {
+            if (confirm('⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ LỊCH SỬ?')) {
+                let response = await fetch('@Url.Content("~/api/patient/diagnose/delete-all")', { method: 'POST' });
+                if (response.ok) location.reload();
+            }
+        }
+    </script>
+}

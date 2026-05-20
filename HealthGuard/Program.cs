@@ -28,6 +28,7 @@ builder.Services.AddScoped<IJwtUtils, JwtUtils>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PatientProfileService>();
 builder.Services.AddScoped<PatientFeedbackService>();
+builder.Services.AddScoped<DashboardService>();
 builder.Services.AddMemoryCache();
 // Nhớ thêm dòng này để khởi tạo MobileService
 builder.Services.AddScoped<MobileService>();

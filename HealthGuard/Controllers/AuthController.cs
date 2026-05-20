@@ -3,7 +3,7 @@ using HealthGuard.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Memory; // Thư viện để lưu OTP tạm thời
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,19 +15,16 @@ namespace HealthGuard.Controllers
     public class AuthController : Controller
     {
         private readonly AuthService _authService;
-        private readonly IMemoryCache _cache; // Inject MemoryCache
+        private readonly IMemoryCache _cache;
 
-        // Cập nhật constructor để nhận thêm IMemoryCache
-        public AuthController(AuthService authService, IMemoryCache cache)
+        private readonly PatientProfileService _patientProfileService;
+
+        public AuthController(AuthService authService, IMemoryCache cache, PatientProfileService patientProfileService)
         {
             _authService = authService;
             _cache = cache;
+            _patientProfileService = patientProfileService;
         }
-
-        // ==========================================
-        // CÁC HÀM XỬ LÝ CHO WEB (GIỮ NGUYÊN)
-        // ==========================================
-
 
         [HttpGet]
         public IActionResult Login()
@@ -42,11 +39,23 @@ namespace HealthGuard.Controllers
             {
                 var token = await _authService.LoginAsync(request);
 
+                string avatarUrl = "";
+                try
+                {
+                    var profile = await _patientProfileService.GetMyProfileAsync(request.Username);
+                    avatarUrl = profile?.AvatarUrl ?? "";
+                }
+                catch
+                {
+                }
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, request.Username),
                     new Claim(ClaimTypes.NameIdentifier, request.Username),
-                    new Claim("jwt_token", token)
+                    new Claim("jwt_token", token),
+                    
+                    new Claim("AvatarUrl", avatarUrl)
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -108,6 +117,5 @@ namespace HealthGuard.Controllers
             Response.Cookies.Delete("JWT_TOKEN");
             return RedirectToAction("Login", "Auth");
         }
-
     }
 }
