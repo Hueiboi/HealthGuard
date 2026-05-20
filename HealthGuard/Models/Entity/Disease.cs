@@ -4,9 +4,9 @@
     {
         public long Id { get; set; }
         public string? DiseaseCode { get; set; }
-        public string DiseaseName { get; set; } // THÊM DÒNG NÀY
+        public string? DiseaseName { get; set; } // THÊM DÒNG NÀY
         public string? Description { get; set; }
-        public string TreatmentAdvice { get; set; }
+        public string? TreatmentAdvice { get; set; }
 
         public virtual ICollection<DiseaseSymptom> DiseaseSymptoms { get; set; }
     }

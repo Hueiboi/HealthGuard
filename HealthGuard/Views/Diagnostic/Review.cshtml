@@ -1,487 +1,325 @@
 ﻿@{
     ViewData["Title"] = "Kết quả chẩn đoán - HealthGuard";
-    Layout = null; 
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
+@section Styles {
     <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-            margin: 0;
-            padding-bottom: 50px;
-        }
-
-        .main-content {
+        .review-container {
             max-width: 1100px;
             margin: 40px auto;
             width: 100%;
         }
 
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 40px;
-        }
-
-        .step-label {
-            color: #346cb0;
-            font-size: 0.8rem;
+        .wizard-subtitle {
+            color: #2c6fb0;
+            font-size: 0.85rem;
             font-weight: 700;
             text-transform: uppercase;
             margin-bottom: 8px;
         }
 
-        .page-title {
-            font-size: 2.2rem;
+        .wizard-title {
+            font-size: 2.5rem;
             font-weight: 800;
-            color: #0d47a1;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            color: var(--text-dark);
         }
 
-        .page-desc {
-            color: #666;
+        .wizard-desc {
+            color: var(--text-muted);
             font-size: 0.95rem;
-            max-width: 500px;
-            margin: 0;
+            margin-bottom: 30px;
             line-height: 1.5;
         }
 
-        .top-actions {
+        .progress-track {
+            height: 6px;
+            background-color: #e5e9f2;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: #346cb0;
+            border-radius: 10px;
+            width: 100%;
+            transition: width 0.4s ease;
+        }
+
+        .top-bar {
             display: flex;
+            justify-content: flex-end;
             gap: 15px;
-        }
-
-        .btn-ghost {
-            color: #0d47a1;
-            background: none;
-            border: none;
-            font-weight: 600;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-        }
-
-            .btn-ghost:hover {
-                background: #e2eafc;
-            }
-
-        .btn-primary-custom {
-            background: #0d47a1;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(13,71,161,0.2);
+            margin-bottom: 30px;
         }
 
         .insights-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 30px;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 40px;
+            align-items: start;
         }
 
-        .glass-card {
-            background: white;
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        .primary-disease-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 5px;
+            line-height: 1.3;
+            display: block;
         }
 
-        .primary-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+        .primary-prob {
+            color: #0d47a1;
+            font-size: 2.5rem;
+            font-weight: 900;
+            display: block;
             margin-bottom: 20px;
         }
 
-        .disease-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .disease-icon {
-            width: 50px;
-            height: 50px;
-            background: #e2eafc;
-            color: #0d47a1;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-right: 15px;
-        }
-
-        .disease-name {
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin: 0;
-            color: #111;
-        }
-
-        .disease-badge {
-            font-size: 0.8rem;
-            color: #666;
-            font-weight: 500;
-        }
-
-        .probability-box {
-            text-align: right;
-        }
-
-        .prob-score {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #0d47a1;
-            margin: 0;
-            line-height: 1;
-        }
-
-        .prob-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        .clinical-desc {
-            color: #555;
+        .primary-desc {
+            color: #475569;
+            font-size: 1.05rem;
             line-height: 1.6;
             margin-bottom: 30px;
-            font-size: 0.95rem;
         }
 
         .action-box {
-            background: #f8f9fa;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 25px;
+            margin-bottom: 25px;
         }
 
         .action-title {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 800;
-            color: #333;
+            color: #1e293b;
             text-transform: uppercase;
             margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .secondary-card {
-            padding: 20px 25px;
-            margin-bottom: 20px;
+        .action-content {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.6;
+            margin: 0;
         }
+
+        .btn-feedback {
+            background: #eff6ff;
+            color: #0d47a1;
+            border: 1px dashed #93c5fd;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            width: 100%;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+
+            .btn-feedback:hover {
+                background: #e0e7ff;
+                border-style: solid;
+            }
+
+        .secondary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 25px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.01);
+        }
+
+            .secondary-card:hover {
+                border-color: #cbd5e1;
+                box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            }
 
         .sec-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .sec-title {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin: 0;
             display: flex;
             align-items: center;
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin: 0;
+            gap: 10px;
         }
 
         .sec-prob {
-            font-weight: 800;
-            color: #346cb0;
+            font-weight: 900;
+            color: #0d47a1;
             font-size: 1.2rem;
         }
 
         .sec-desc {
-            color: #666;
-            font-size: 0.85rem;
+            color: #64748b;
+            font-size: 0.9rem;
             line-height: 1.5;
             margin: 0;
         }
-
-        .status-card {
-            background: #bcdcff;
-            padding: 25px;
-            border-radius: 20px;
-        }
-
-        .status-title {
-            font-weight: 800;
-            color: #082d68;
-            margin-bottom: 10px;
-            font-size: 1.05rem;
-        }
-
-        .status-desc {
-            color: #1a4d8c;
-            font-size: 0.85rem;
-            margin: 0;
-        }
     </style>
-</head>
-<body>
+}
 
-    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: white; border-bottom: 1px solid #e2e8f0; margin-bottom: 30px;">
-        <a asp-controller="Home" asp-action="Index" style="font-size: 1.6rem; font-weight: 800; color: #2563eb; text-decoration: none; letter-spacing: -0.5px;">
-            HealthGuard
-        </a>
+<div class="review-container">
+    <div class="wizard-subtitle">CÔNG CỤ CHẨN ĐOÁN &bull; BƯỚC 3/3</div>
+    <h1 class="wizard-title">Kết quả phân tích</h1>
+    <p class="wizard-desc">Trí tuệ nhân tạo đã hoàn tất quá trình so khớp và đánh giá các triệu chứng của bạn.</p>
 
-        <div style="flex: 1; max-width: 400px; margin: 0 20px;">
-            <div style="background-color: #f4f6f8; border-radius: 20px; padding: 10px 20px; display: flex; align-items: center; color: #64748b;">
-                <i class="bi bi-search me-2"></i>
-                <input type="text" placeholder="Tìm kiếm hồ sơ, thuốc..." style="border: none; background: transparent; width: 100%; outline: none; color: #334155; font-size: 0.95rem;">
-            </div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+
+    <div id="loadingStatus" class="text-center" style="padding: 100px 0;">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+        <h3 class="fw-bold text-dark">AI đang phân tích triệu chứng...</h3>
+        <p class="text-muted">Hệ thống đang thực hiện chuẩn hóa và tính toán xác suất bệnh lý.</p>
+    </div>
+
+    <div id="resultWrapper" style="display: none;">
+        <div class="top-bar">
+            <a asp-controller="Diagnostic" asp-action="History" class="btn btn-outline-primary fw-bold" style="border-radius: 20px; padding: 8px 24px;"><i class="bi bi-clock-history me-2"></i> Lịch sử</a>
+            <button class="btn btn-primary fw-bold" onclick="window.print()" style="border-radius: 20px; padding: 8px 24px;"><i class="bi bi-printer me-2"></i> Lưu kết quả</button>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 20px;">
-            <a asp-controller="Diagnostic" asp-action="Index" style="background-color: #2563eb; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(37,99,235,0.2);">
-                <i class="bi bi-stars"></i> AI Diagnosis Wizard
-            </a>
+        <div class="insights-grid">
+            <div class="primary-column">
+                <h1 class="primary-disease-name" id="primaryDiseaseName">--</h1>
+                <span class="primary-prob" id="primaryProbability"></span>
 
-            <i class="bi bi-bell" style="font-size: 1.2rem; color: #64748b; cursor: pointer;"></i>
-
-            @if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                <div class="dropdown">
-                    <div class="dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 40px; height: 40px; border-radius: 50%; background-color: #20c997; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; user-select: none;">
-                        @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "U")
-                    </div>
-                    <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 10px;">
-                        <li class="px-3 py-2 border-bottom mb-1">
-                            <p class="mb-0 fw-bold text-dark">@User.Identity.Name</p>
-                            <small class="text-muted">Bệnh nhân</small>
-                        </li>
-                        <li><a class="dropdown-item py-2" asp-controller="Patient" asp-action="Index"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
-                        <li><a class="dropdown-item py-2 text-danger" asp-controller="Auth" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</a></li>
-                    </ul>
-                </div>
-            }
-            else
-            {
-                <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-primary btn-sm fw-bold" style="border-radius: 20px; padding: 6px 20px;">Đăng nhập</a>
-            }
-        </div>
-    </nav>
-
-    <main class="main-content">
-        <div class="page-header">
-            <div>
-                <div class="step-label">Bước 3 / 3: Phân tích hoàn tất</div>
-                <h1 class="page-title">Kết quả phân tích</h1>
-                <p class="page-desc" id="statusMessage">
-                    <i class="spinner-border spinner-border-sm text-primary"></i> Trí tuệ nhân tạo (Logistic Regression) đang phân tích dữ liệu của bạn...
-                </p>
-            </div>
-            <div class="top-actions">
-                <a asp-controller="Diagnostic" asp-action="History" class="btn-ghost">
-                    <i class="bi bi-clock-history me-2"></i> Lịch sử
-                </a>
-                <button class="btn-primary-custom" onclick="window.print()">
-                    <i class="bi bi-download me-2"></i> Lưu kết quả
-                </button>
-            </div>
-        </div>
-
-        <div class="insights-grid" style="display: none;" id="resultContainer">
-            <div class="glass-card primary-card">
-                <div class="primary-header">
-                    <div class="disease-info">
-                        <div class="disease-icon"><i class="bi bi-virus"></i></div>
-                        <div>
-                            <h2 class="disease-name" id="primaryDiseaseName">--</h2>
-                            <div class="disease-badge">Chẩn đoán khả năng cao nhất</div>
-                        </div>
-                    </div>
-                    <div class="probability-box">
-                        <p class="prob-score" id="primaryProbability">--%</p>
-                        <p class="prob-label">Độ tin cậy</p>
-                    </div>
-                </div>
-                <p class="clinical-desc" id="primaryDesc">Dựa trên mô hình phân tích hồi quy logistic, đây là đánh giá lâm sàng sơ bộ.</p>
+                <p class="primary-desc" id="primaryDesc">--</p>
 
                 <div class="action-box">
-                    <div class="action-title"><i class="bi bi-shield-check"></i> Hành động khuyến nghị</div>
-                    <p id="primaryTreatment" style="font-size: 0.95rem; color: #444;">Vui lòng tham khảo ý kiến bác sĩ chuyên khoa.</p>
+                    <div class="action-title"><i class="bi bi-shield-check text-primary fs-5"></i> HÀNH ĐỘNG KHUYẾN NGHỊ</div>
+                    <p class="action-content" id="primaryTreatment">--</p>
                 </div>
 
-                <button class="btn w-100 mt-3" data-bs-toggle="modal" data-bs-target="#feedbackModal" style="background-color: #e2eafc; color: #0d47a1; font-weight: 700; border-radius: 16px; padding: 12px; border: 2px dashed #adc6ff; transition: 0.2s;">
+                <button class="btn w-100 fw-bold" data-bs-toggle="modal" data-bs-target="#feedbackModal" style="background: #eff6ff; color: #0d47a1; border: 1px dashed #93c5fd; padding: 14px; border-radius: 12px;">
                     <i class="bi bi-chat-square-text me-2"></i> Đánh giá trải nghiệm chẩn đoán
                 </button>
             </div>
 
-            <div class="secondary-column" id="secondaryList">
-            </div>
+            <div class="secondary-column" id="secondaryList"></div>
         </div>
-    </main>
+    </div>
+</div>
 
-    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 24px; border: none; box-shadow: 0 20px 50px rgba(0,0,0,0.1);">
-                <div class="modal-body" style="padding: 40px;">
-
-                    <h3 style="font-weight: 800; font-size: 1.5rem; text-align: center; color: #111; margin-bottom: 10px;">Đánh giá trải nghiệm</h3>
-                    <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 30px;">Phản hồi của bạn giúp chúng tôi cung cấp dịch vụ tốt hơn. Mọi thông tin đều được bảo mật.</p>
-
-                    <form id="feedbackForm">
-                        <div class="mb-4">
-                            <label style="font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.5px;">Chủ đề phản hồi (Tùy chọn)</label>
-                            <select class="form-select" id="feedbackCategory" style="background-color: #f4f6f8; border: none; border-radius: 12px; padding: 12px 15px; font-weight: 500; color: #333; box-shadow: none; outline: none; cursor: pointer;">
-                                <option selected value="">Chọn một chủ đề...</option>
-                                <option value="accuracy">Độ chính xác của AI</option>
-                                <option value="ui">Trải nghiệm giao diện (UX/UI)</option>
-                                <option value="bug">Gặp lỗi kỹ thuật</option>
-                                <option value="other">Ý kiến khác</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label style="font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 8px; display: block; letter-spacing: 0.5px;">Nhận xét bổ sung</label>
-                            <textarea class="form-control" id="feedbackContent" rows="4" placeholder="Hãy cho chúng tôi biết hệ thống hoạt động tốt ở đâu hoặc cách chúng tôi có thể cải thiện..." style="background-color: #f4f6f8; border: none; border-radius: 12px; padding: 15px; font-size: 0.95rem; color: #333; box-shadow: none; outline: none; resize: none;"></textarea>
-                        </div>
-
-                        <div class="d-flex justify-content-end align-items-center gap-4 mt-4">
-                            <button type="button" style="background: none; border: none; color: #0d47a1; font-weight: 700; font-size: 0.95rem;" data-bs-dismiss="modal">Hủy bỏ</button>
-                            <button type="button" onclick="submitFeedback(event)" style="background-color: #0d47a1; color: white; border: none; border-radius: 30px; padding: 12px 24px; font-weight: 600; font-size: 0.95rem; transition: 0.2s;">Gửi phản hồi</button>
-                        </div>
-                    </form>
-
-                </div>
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 24px; border: none;">
+            <div class="modal-body" style="padding: 40px;">
+                <h3 class="fw-bold text-center mb-4">Đánh giá trải nghiệm</h3>
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">CHỦ ĐỀ</label>
+                        <select class="form-select" id="feedbackCategory" style="border-radius: 12px; background: #f4f6f8; border: none; padding: 12px;">
+                            <option value="">Chọn một chủ đề...</option>
+                            <option value="accuracy">Độ chính xác của AI</option>
+                            <option value="ui">Giao diện người dùng</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-muted">NHẬN XÉT</label>
+                        <textarea class="form-control" id="feedbackContent" rows="4" style="border-radius: 12px; background: #f4f6f8; border: none; padding: 12px;"></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end gap-3">
+                        <button type="button" class="btn btn-link text-decoration-none fw-bold" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" onclick="submitFeedback(event)" class="btn btn-primary fw-bold" style="border-radius: 20px; padding: 10px 24px;">Gửi</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@section Scripts {
     <script>
-        // 1. LOGIC GỌI AI PYTHON VÀ HIỂN THỊ KẾT QUẢ
         document.addEventListener("DOMContentLoaded", async () => {
             const symptomData = sessionStorage.getItem('healthGuard_SymptomDetails');
-            if (!symptomData) {
-                window.location.href = "@Url.Action("Index", "Diagnostic")";
-                return;
-            }
+            if (!symptomData) return window.location.href = "@Url.Action("Index", "Diagnostic")";
 
             const parsedData = JSON.parse(symptomData);
             const requestPayload = {
-                selectedSymptoms: parsedData.map(s => ({
-                    symptomId: parseInt(s.id),
-                    intensity: s.intensity,
-                    duration: s.duration
-                }))
+                selectedSymptoms: parsedData.map(s => ({ symptomId: parseInt(s.id), intensity: s.intensity, duration: s.duration }))
             };
 
             try {
                 const response = await fetch('@Url.Content("~/api/patient/diagnose")', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestPayload)
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestPayload)
                 });
 
-                if (!response.ok) throw new Error("Lỗi máy chủ AI");
+                // 🔥 ĐÃ FIX: Chặn lỗi ngầm, ép in ra màn hình
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || "Lỗi xử lý từ máy chủ AI Python.");
+                }
 
                 const apiResult = await response.json();
 
-                document.getElementById('statusMessage').innerHTML = "Hệ thống AI đã hoàn tất phân tích triệu chứng của bạn một cách bảo mật.";
-                document.getElementById('resultContainer').style.display = "grid";
+                document.getElementById('loadingStatus').style.display = "none";
+                document.getElementById('resultWrapper').style.display = "block";
 
-                if(apiResult.diagnoses && apiResult.diagnoses.length > 0) {
-                    const top1 = apiResult.diagnoses[0];
+                const diagnosesList = apiResult.diagnoses || [];
+
+                if(diagnosesList.length > 0) {
+                    const top1 = diagnosesList[0];
+
                     document.getElementById('primaryDiseaseName').innerText = top1.diseaseName;
                     document.getElementById('primaryProbability').innerText = top1.probability + "%";
-                    document.getElementById('primaryDesc').innerText = top1.description || "Phân tích dựa trên các triệu chứng và thời gian kéo dài.";
-                    if(top1.treatment) document.getElementById('primaryTreatment').innerText = top1.treatment;
+                    document.getElementById('primaryDesc').innerText = top1.description || "Phân tích bệnh lý dựa trên triệu chứng lâm sàng.";
+                    document.getElementById('primaryTreatment').innerText = top1.treatment || "Thực hiện theo chỉ dẫn của bác sĩ.";
 
                     const secList = document.getElementById('secondaryList');
                     secList.innerHTML = "";
-
-                    for(let i = 1; i < apiResult.diagnoses.length; i++) {
-                        const d = apiResult.diagnoses[i];
+                    for(let i = 1; i < diagnosesList.length; i++) {
+                        const d = diagnosesList[i];
                         secList.innerHTML += `
-                            <div class="glass-card secondary-card">
+                            <div class="secondary-card">
                                 <div class="sec-header">
-                                    <h3 class="sec-title"><i class="bi bi-info-circle me-2"></i> ${d.diseaseName}</h3>
+                                    <h3 class="sec-title"><i class="bi bi-info-circle text-muted"></i> ${d.diseaseName}</h3>
                                     <span class="sec-prob">${d.probability}%</span>
                                 </div>
                                 <p class="sec-desc">${d.description || ""}</p>
-                            </div>
-                        `;
+                            </div>`;
                     }
+                }
+                else {
+                    document.getElementById('primaryDiseaseName').innerText = "Không phát hiện rủi ro cao";
+                    document.getElementById('primaryProbability').innerText = "";
+                    document.getElementById('primaryDesc').innerText = "Dựa trên các triệu chứng bạn cung cấp, hệ thống AI không tìm thấy bệnh lý nào đạt ngưỡng rủi ro cảnh báo. Cơ thể bạn có thể đang ở trạng thái mệt mỏi nhẹ.";
+                    document.getElementById('primaryTreatment').innerText = "Hãy nghỉ ngơi, uống đủ nước và ăn uống đầy đủ. Nếu các triệu chứng trở nên nghiêm trọng, vui lòng đến cơ sở y tế gần nhất.";
 
-                    secList.innerHTML += `
-                        <div class="status-card mt-3">
-                            <div class="status-title"><i class="bi bi-shield-fill-exclamation me-2"></i> Lời khuyên theo dõi</div>
-                            <p class="status-desc">Dựa trên dữ liệu cung cấp, hãy tiếp tục theo dõi các triệu chứng trong 48 giờ tới. Nếu có dấu hiệu khó thở hoặc đau thắt ngực, hãy đi khám ngay.</p>
+                    document.getElementById('secondaryList').innerHTML = `
+                        <div class="alert alert-info border-0" style="background-color: #eff6ff; border-radius: 16px; padding: 25px;">
+                            <i class="bi bi-info-circle-fill text-primary fs-4 mb-2 d-block"></i>
+                            <strong class="d-block mb-1 text-dark">Thông tin bổ sung</strong>
+                            <p class="text-muted mb-0" style="font-size: 0.95rem;">Hệ thống chưa ghi nhận đủ dữ liệu triệu chứng đặc hiệu để đưa ra các dự đoán bệnh lý phụ trợ.</p>
                         </div>
                     `;
                 }
             } catch (error) {
-                console.error("Lỗi AI:", error);
-                document.getElementById('statusMessage').innerHTML = "<span class='text-danger'>Không thể kết nối tới bộ não AI. Vui lòng kiểm tra lại kết nối mạng.</span>";
+                console.error("Lỗi:", error);
+                document.getElementById('loadingStatus').innerHTML = `<h3 class='text-danger mt-5'><i class='bi bi-bug me-2'></i>${error.message || "Lỗi kết nối máy chủ AI."}</h3>`;
             }
         });
 
-
         async function submitFeedback(event) {
-            const category = document.getElementById('feedbackCategory').value;
-            const content = document.getElementById('feedbackContent').value;
-
-            if (!content.trim()) {
-                alert("Vui lòng nhập một vài dòng nhận xét trước khi gửi nhé!");
-                return;
-            }
-
-
-            const finalComment = category ? `[${category.toUpperCase()}] ${content}` : content;
-
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang gửi...';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch('/api/patient/feedbacks', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        comments: finalComment,
-                        sessionId: null 
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    const modalElement = document.getElementById('feedbackModal');
-                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                    modalInstance.hide();
-
-                    alert("Cảm ơn bạn! Phản hồi của bạn đã được ghi nhận vào hệ thống.");
-                    document.getElementById('feedbackForm').reset();
-                } else {
-                    alert("Lỗi: " + data.message);
-                }
-            } catch (error) {
-                console.error("Lỗi gửi Feedback:", error);
-                alert("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+            alert("Cảm ơn phản hồi của bạn!");
+            location.reload();
         }
     </script>
-</body>
-</html>
+}

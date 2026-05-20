@@ -1,15 +1,20 @@
-﻿
-namespace HealthGuard.Models.Entity;
+﻿using System;
+using System.Collections.Generic;
 
-public class DiagnosticSession
+namespace HealthGuard.Models.Entity
 {
-    public long Id { get; set; }
-    public string Status { get; set; } // Đảm bảo có dòng này
-    public DateTime CreatedAt { get; set; }
-    public virtual User User { get; set; }
+    public class DiagnosticSession
+    {
+        public long Id { get; set; }
+        public string? Status { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public virtual User User { get; set; }
 
-    public string MainSymptomDescription { get; set; }
-    public int PainLevel { get; set; }
-    public virtual ICollection<SessionSymptom> SessionSymptoms { get; set; }
-    public virtual ICollection<DiagnosisResult> DiagnosisResults { get; set; }
+        public string? MainSymptomDescription { get; set; }
+        public int? PainLevel { get; set; }
+
+        public bool IsSaved { get; set; }
+        public virtual ICollection<SessionSymptom> SessionSymptoms { get; set; }
+        public virtual ICollection<DiagnosisResult> DiagnosisResults { get; set; }
+    }
 }
